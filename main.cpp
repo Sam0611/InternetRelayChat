@@ -37,6 +37,7 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
+	// AF_INET = IPv4, SOCK_STREAM = TCP, IPPROTO_TCP = TCP
 	int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockfd == ERROR)
 	{
@@ -44,11 +45,14 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
+	// INADDR_ANY any IPv4 local host address
 	sockaddr_in addr;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 
+	// attention erreur quand le port est utilise 2 fois de suite
+	// casting en C++ avec <reinterpret_cast> ou autre
 	if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == ERROR)
 	{
         std::cerr << RED << "Error: Could'nt bind socket" << RESET << std::endl;
