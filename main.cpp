@@ -20,6 +20,8 @@
 #define RED "\033[31;01m"
 #define RESET "\033[00m"
 #define ERROR -1
+#define VALID_PORT_MIN 1024
+#define VALID_PORT_MAX 65535
 
 int	main(int ac, char **av)
 {
@@ -31,7 +33,7 @@ int	main(int ac, char **av)
 
 	// check av[1] is number and range is valid
 	long port = strtol(av[1], NULL, 0);
-	if (port <= 0)
+	if (port < VALID_PORT_MIN || port > VALID_PORT_MAX)
 	{
         std::cerr << RED << "Error: Invalid port number" << RESET << std::endl;
 		return (1);
@@ -59,30 +61,105 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
+	// non bloquante
 	if (listen(sockfd, SOMAXCONN) == ERROR)
 	{
         std::cerr << RED << "Error: listen failed" << RESET << std::endl;
 		return (1);
 	}
 
+	struct pollfd fds[10];
+	fds[0].fd = sockfd;
+	fds[0].events = POLLIN;
+	int nfds = 1;
+	int newClient = -1;
 	sockaddr_in addrClient;
 	socklen_t len = sizeof(addrClient);
-	int newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
-	if (newClient == ERROR)
-	{
-        std::cerr << RED << "Error: accept failed" << RESET << std::endl;
-		return (1);
-	}
-
 	char buffer[1024];
-	if (recv(newClient, buffer, sizeof(buffer), 0) == ERROR)
+	for (size_t i = 0; i < sizeof(buffer); i++)
+		buffer[i] = 0;
+	while (1)
 	{
-        std::cerr << RED << "Error: recv failed" << RESET << std::endl;
-		return (1);
+		if (poll(fds, nfds, 0) == ERROR)
+		{
+			std::cerr << RED << "Error: poll failed" << RESET << std::endl;
+			return (1);
+		}
+
+		for (int i = 0; i < nfds; i++)
+		{
+			if (fds[i].revents == 0)
+				continue ;
+
+			// if (fds[i].revents == POLLIN)
+			// std::cout << i << " : " << fds[i].revents << std::endl;
+
+			// if (fds[i].revents != POLLIN)
+			// 	break ;
+
+			if (fds[i].fd == sockfd)
+			{
+				newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
+				if (newClient == ERROR)
+				{
+					std::cerr << RED << "Error: accept failed" << RESET << std::endl;
+					return (1);
+				}
+				std::cout << "New connection" << std::endl;
+				fds[nfds].fd = newClient;
+				fds[nfds].events = POLLIN;
+				nfds++;
+			}
+			else
+			{
+				if (fds[i].revents == 25)
+				{
+					std::cout << "connection closed" << std::endl;
+					close(fds[i].fd);
+					fds[i].fd = fds[nfds].fd;
+					fds[nfds].fd = 0;
+					fds[i].revents = 0;
+					nfds--;
+					continue ;
+				}
+				
+				if (recv(fds[i].fd, buffer, sizeof(buffer), 0) == ERROR)
+				{
+					std::cerr << RED << "Error: recv failed" << RESET << std::endl;
+					return (1);
+				}
+				std::cout << "Received : " << buffer;
+
+				for (int j = 1; j < nfds; j++)
+					if (j != i)
+						send(fds[j].fd, buffer, sizeof(buffer), 0);
+
+				for (int i = 0; buffer[i]; i++)
+					buffer[i] = 0;
+			}
+		}
 	}
 
+	// sockaddr_in addrClient;
+	// socklen_t len = sizeof(addrClient);
+	// // accept = bloquant
+	// int newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
+	// if (newClient == ERROR)
+	// {
+    //     std::cerr << RED << "Error: accept failed" << RESET << std::endl;
+	// 	return (1);
+	// }
+	// else
+	// 	std::cout << "New connection" << std::endl;
 
-	std::cout << "Received : " << buffer << std::endl;
+	// char buffer[1024];
+	// // recv = bloquant
+	// if (recv(newClient, buffer, sizeof(buffer), 0) == ERROR)
+	// {
+    //     std::cerr << RED << "Error: recv failed" << RESET << std::endl;
+	// 	return (1);
+	// }
+	// std::cout << "Received : " << buffer << std::endl;
 
 	close(sockfd);
 	close(newClient);
