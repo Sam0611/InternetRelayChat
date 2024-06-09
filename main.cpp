@@ -114,9 +114,10 @@ int	main(int ac, char **av)
 			{
 				if (fds[i].revents == 25)
 				{
-					std::cout << "connection closed" << std::endl;
+					std::cout << "connection closed with revent = 25" << std::endl;
 					close(fds[i].fd);
-					fds[i].fd = fds[nfds].fd;
+					if (i != nfds)
+						fds[i].fd = fds[nfds].fd;
 					fds[nfds].fd = 0;
 					fds[i].revents = 0;
 					nfds--;
@@ -128,6 +129,18 @@ int	main(int ac, char **av)
 					std::cerr << RED << "Error: recv failed" << RESET << std::endl;
 					return (1);
 				}
+				if (!buffer[0]) // ctrl+C
+				{
+					std::cout << "connection closed by ctrl+C" << std::endl;
+					close(fds[i].fd);
+					if (i != nfds)
+						fds[i].fd = fds[nfds].fd;
+					fds[nfds].fd = 0;
+					fds[i].revents = 0;
+					nfds--;
+					continue ;
+				}
+
 				std::cout << "Received : " << buffer;
 
 				for (int j = 1; j < nfds; j++)
