@@ -88,8 +88,6 @@ int	main(int ac, char **av)
 
 		for (int i = 0; i < nfds; i++)
 		{
-			if (fds[i].revents == 0)
-				continue ;
 
 			// if (fds[i].revents == POLLIN)
 			// std::cout << i << " : " << fds[i].revents << std::endl;
@@ -97,8 +95,13 @@ int	main(int ac, char **av)
 			// if (fds[i].revents != POLLIN)
 			// 	break ;
 
+			if (fds[i].revents == 0)
+				continue ;
+
 			if (fds[i].fd == sockfd)
 			{
+				// server
+
 				newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
 				if (newClient == ERROR)
 				{
@@ -112,6 +115,8 @@ int	main(int ac, char **av)
 			}
 			else
 			{
+				// clients
+
 				if (fds[i].revents == 25)
 				{
 					std::cout << "connection closed with revent = 25" << std::endl;
@@ -124,11 +129,13 @@ int	main(int ac, char **av)
 					continue ;
 				}
 				
+				// verifier le nombre d'octects pour mettre un \0 a la fin
 				if (recv(fds[i].fd, buffer, sizeof(buffer), 0) == ERROR)
 				{
 					std::cerr << RED << "Error: recv failed" << RESET << std::endl;
 					return (1);
 				}
+
 				if (!buffer[0]) // ctrl+C
 				{
 					std::cout << "connection closed by ctrl+C" << std::endl;
@@ -175,7 +182,6 @@ int	main(int ac, char **av)
 	// std::cout << "Received : " << buffer << std::endl;
 
 	close(sockfd);
-	close(newClient);
 
 	return (0);
 }
