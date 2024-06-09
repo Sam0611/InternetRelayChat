@@ -10,18 +10,9 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <iostream>
-#include <sys/socket.h> // socket
-#include <netinet/in.h> // sockaddr_in htons
-#include <stdlib.h> // strtol
 #include <poll.h> // poll
-#include <unistd.h> // close
 
-#define RED "\033[31;01m"
-#define RESET "\033[00m"
-#define ERROR -1
-#define VALID_PORT_MIN 1024
-#define VALID_PORT_MAX 65535
+#include "Server.hpp"
 
 int	main(int ac, char **av)
 {
@@ -31,42 +22,15 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
-	// check av[1] is number and range is valid
-	long port = strtol(av[1], NULL, 0);
-	if (port < VALID_PORT_MIN || port > VALID_PORT_MAX)
-	{
-        std::cerr << RED << "Error: Invalid port number" << RESET << std::endl;
-		return (1);
-	}
 
-	// AF_INET = IPv4, SOCK_STREAM = TCP, IPPROTO_TCP = TCP
-	int sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	Server server;
+
+	// check av[1] is number (and range is valid)
+
+	int sockfd = server.createServer(av[1]);
 	if (sockfd == ERROR)
-	{
-        std::cerr << RED << "Error: Could'nt initialize socket" << RESET << std::endl;
 		return (1);
-	}
 
-	// INADDR_ANY any IPv4 local host address
-	sockaddr_in addr;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
-
-	// attention erreur quand le port est utilise 2 fois de suite
-	// casting en C++ avec <reinterpret_cast> ou autre
-	if (bind(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == ERROR)
-	{
-        std::cerr << RED << "Error: Could'nt bind socket" << RESET << std::endl;
-		return (1);
-	}
-
-	// non bloquante
-	if (listen(sockfd, SOMAXCONN) == ERROR)
-	{
-        std::cerr << RED << "Error: listen failed" << RESET << std::endl;
-		return (1);
-	}
 
 	struct pollfd fds[10];
 	fds[0].fd = sockfd;
@@ -86,102 +50,68 @@ int	main(int ac, char **av)
 			return (1);
 		}
 
-		for (int i = 0; i < nfds; i++)
+		// server socket
+		if (fds[0].revents != 0)
 		{
+			newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
+			if (newClient == ERROR)
+			{
+				std::cerr << RED << "Error: accept failed" << RESET << std::endl;
+				return (1);
+			}
+			std::cout << "New connection" << std::endl;
+			fds[nfds].fd = newClient;
+			fds[nfds].events = POLLIN;
+			nfds++;
+		}
 
-			// if (fds[i].revents == POLLIN)
-			// std::cout << i << " : " << fds[i].revents << std::endl;
-
-			// if (fds[i].revents != POLLIN)
-			// 	break ;
-
+		// client sockets
+		for (int i = 1; i < nfds; i++)
+		{
 			if (fds[i].revents == 0)
 				continue ;
 
-			if (fds[i].fd == sockfd)
+			if (fds[i].revents == 25)
 			{
-				// server
-
-				newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
-				if (newClient == ERROR)
-				{
-					std::cerr << RED << "Error: accept failed" << RESET << std::endl;
-					return (1);
-				}
-				std::cout << "New connection" << std::endl;
-				fds[nfds].fd = newClient;
-				fds[nfds].events = POLLIN;
-				nfds++;
+				std::cout << "connection closed with revent = 25" << std::endl;
+				nfds--;
+				close(fds[i].fd);
+				if (i != nfds)
+					fds[i].fd = fds[nfds].fd;
+				fds[nfds].fd = 0;
+				fds[i].revents = 0;
+				continue ;
 			}
-			else
+			
+			// verifier le nombre d'octects pour mettre un \0 a la fin
+			if (recv(fds[i].fd, buffer, sizeof(buffer), 0) == ERROR)
 			{
-				// clients
-
-				if (fds[i].revents == 25)
-				{
-					std::cout << "connection closed with revent = 25" << std::endl;
-					close(fds[i].fd);
-					if (i != nfds)
-						fds[i].fd = fds[nfds].fd;
-					fds[nfds].fd = 0;
-					fds[i].revents = 0;
-					nfds--;
-					continue ;
-				}
-				
-				// verifier le nombre d'octects pour mettre un \0 a la fin
-				if (recv(fds[i].fd, buffer, sizeof(buffer), 0) == ERROR)
-				{
-					std::cerr << RED << "Error: recv failed" << RESET << std::endl;
-					return (1);
-				}
-
-				if (!buffer[0]) // ctrl+C
-				{
-					std::cout << "connection closed by ctrl+C" << std::endl;
-					close(fds[i].fd);
-					if (i != nfds)
-						fds[i].fd = fds[nfds].fd;
-					fds[nfds].fd = 0;
-					fds[i].revents = 0;
-					nfds--;
-					continue ;
-				}
-
-				std::cout << "Received : " << buffer;
-
-				for (int j = 1; j < nfds; j++)
-					if (j != i)
-						send(fds[j].fd, buffer, sizeof(buffer), 0);
-
-				for (int i = 0; buffer[i]; i++)
-					buffer[i] = 0;
+				std::cerr << RED << "Error: recv failed" << RESET << std::endl;
+				return (1);
 			}
+
+			if (!buffer[0]) // ctrl+C
+			{
+				std::cout << "connection closed by ctrl+C" << std::endl;
+				nfds--;
+				close(fds[i].fd);
+				if (i != nfds)
+					fds[i].fd = fds[nfds].fd;
+				fds[nfds].fd = 0;
+				fds[i].revents = 0;
+				continue ;
+			}
+
+			std::cout << "Received : " << buffer;
+
+			for (int j = 1; j < nfds; j++)
+				if (j != i)
+					send(fds[j].fd, buffer, sizeof(buffer), 0);
+
+			for (int i = 0; buffer[i]; i++)
+				buffer[i] = 0;
 		}
 	}
-
-	// sockaddr_in addrClient;
-	// socklen_t len = sizeof(addrClient);
-	// // accept = bloquant
-	// int newClient = accept(sockfd, (sockaddr*)&addrClient, &len);
-	// if (newClient == ERROR)
-	// {
-    //     std::cerr << RED << "Error: accept failed" << RESET << std::endl;
-	// 	return (1);
-	// }
-	// else
-	// 	std::cout << "New connection" << std::endl;
-
-	// char buffer[1024];
-	// // recv = bloquant
-	// if (recv(newClient, buffer, sizeof(buffer), 0) == ERROR)
-	// {
-    //     std::cerr << RED << "Error: recv failed" << RESET << std::endl;
-	// 	return (1);
-	// }
-	// std::cout << "Received : " << buffer << std::endl;
-
-	close(sockfd);
 
 	return (0);
 }
