@@ -21,6 +21,7 @@ class Server
         Server();
         ~Server();
         int createServer(char *input);
+        int startServer(void);
 
     private:
         std::string _host;

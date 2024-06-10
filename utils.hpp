@@ -21,6 +21,8 @@
 #include <stdlib.h> // strtol
 #include <sys/socket.h> // socket
 #include <netinet/in.h> // sockaddr_in htons
+#include <poll.h> // poll
+
 
 
 /*      DEFINE          */
@@ -28,5 +30,7 @@
 #define RED "\033[31;01m"
 #define RESET "\033[00m"
 #define ERROR -1
+#define MAX_CONNEXION 10
+#define BUFFER_SIZE 1024
 
 #endif
