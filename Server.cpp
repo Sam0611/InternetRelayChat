@@ -74,10 +74,12 @@ int Server::startServer(void)
 	struct pollfd fds[MAX_CONNEXION];
 	fds[0].fd = _socket;
 	fds[0].events = POLLIN;
+	fds[0].revents = 0;
 	int nfds = 1;
 	int newClient = -1;
 	sockaddr_in addrClient;
 	socklen_t len = sizeof(addrClient);
+	bool msgBeginning = true;
 	char buffer[BUFFER_SIZE];
 
 	// check if useful to "memset"
@@ -127,8 +129,8 @@ int Server::startServer(void)
 				continue ;
 			}
 			
-			// verifier le nombre d'octects pour mettre un \0 a la fin
-			if (recv(fds[i].fd, buffer, sizeof(buffer), 0) == ERROR)
+			int msglen = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+			if (msglen == ERROR)
 			{
 				std::cerr << RED << "Error: recv failed" << RESET << std::endl;
 				return (1);
@@ -146,11 +148,32 @@ int Server::startServer(void)
 				continue ;
 			}
 
-			std::cout << "Received : " << buffer;
+			// if message is \n only, then do nothing
+			if (msgBeginning && buffer[0] == '\n')
+			{
+				buffer[0] = 0;
+				continue ;
+			}
 
+			// put a \0 at the end of message
+			// buffer[msglen] = 0;
+
+			// print message in server side
+			if (msgBeginning)
+			{
+				std::cout << "Received : ";
+				msgBeginning = false;
+			}
+			std::cout << buffer;
+
+			// print message to all clients
 			for (int j = 1; j < nfds; j++)
 				if (j != i)
 					send(fds[j].fd, buffer, sizeof(buffer), 0);
+
+			// if message ends with \n, the next will be starting
+			if (buffer[msglen - 1] == '\n')
+				msgBeginning = true;
 
 			for (int i = 0; buffer[i]; i++)
 				buffer[i] = 0;
