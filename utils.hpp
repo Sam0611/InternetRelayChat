@@ -24,6 +24,8 @@
 #include <netinet/in.h> // sockaddr_in htons
 #include <poll.h> // poll
 
+#include<unistd.h> // pour les tests
+
 
 
 /*      DEFINE          */

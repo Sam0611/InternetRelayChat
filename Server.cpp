@@ -105,6 +105,7 @@ int Server::startServer(void)
 			std::cout << "New connection" << std::endl;
 			fds[nfds].fd = newClient;
 			fds[nfds].events = POLLIN;
+			fds[nfds].revents = 0;	// initialization to avoid conditional jump
 			nfds++;
 		}
 
@@ -154,5 +155,6 @@ int Server::startServer(void)
 			for (int i = 0; buffer[i]; i++)
 				buffer[i] = 0;
 		}
+		sleep(1);
 	}
 }
