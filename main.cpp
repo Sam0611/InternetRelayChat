@@ -10,8 +10,15 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-
 #include "Server.hpp"
+
+bool is_only_numbers(char *port)
+{
+	for (int i = 0; port[i]; i++)
+		if (!isdigit(port[i]))
+			return (false);
+	return (true);
+}
 
 int	main(int ac, char **av)
 {
@@ -21,10 +28,13 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
-
 	Server server;
 
-	// check av[1] is number (and range is valid) [to do]
+	if (!is_only_numbers(av[1]))
+	{
+        std::cerr << RED << "Error: Invalid port number" << RESET << std::endl;
+		return (1);
+	}
 
 	if (server.createServer(av[1]) == ERROR)
 		return (1);

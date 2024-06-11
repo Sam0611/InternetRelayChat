@@ -19,6 +19,7 @@
 #include <string.h>
 #include <unistd.h> // close
 #include <stdlib.h> // strtol
+#include <cctype> // isdigit
 #include <sys/socket.h> // socket
 #include <netinet/in.h> // sockaddr_in htons
 #include <poll.h> // poll
