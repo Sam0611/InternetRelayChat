@@ -1,34 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.hpp                                         :+:      :+:    :+:   */
+/*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: sam </var/spool/mail/sam>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/06/09 18:04:59 by sam               #+#    #+#             */
-/*   Updated: 2024/06/09 18:05:03 by sam              ###   ########.fr       */
+/*   Created: 2024/06/13 13:26:28 by sam               #+#    #+#             */
+/*   Updated: 2024/06/13 13:26:29 by sam              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __SERVER__
-#define __SERVER__
+#ifndef __CLIENT__
+#define __CLIENT__
 
 #include "utils.hpp"
-#include "Client.hpp"
 
-class Server
+class Client
 {
     public:
-        Server();
-        ~Server();
-        int createServer(char *input);
-        int startServer(void);
+        Client();
+        Client(int fd);
+        ~Client();
 
     private:
-        std::string             _host;
-        long                    _port;
-        int                     _socket;
-        std::vector<Client *>   _clients;
+        int _fd;
+        std::string _username[4]; // maybe 5
+        // std::vector<Channel *> _channels;
 };
 
 #endif

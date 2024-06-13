@@ -23,6 +23,8 @@ Server::Server() : _host("127.0.0.1"), _port(-1), _socket(-1)
 
 Server::~Server()
 {
+	for (size_t i = 0; i < _clients.size(); i++)
+		delete _clients[i];
     if (_socket > 0)
         close(_socket);
 }
@@ -71,6 +73,8 @@ int Server::startServer(void)
 {
 	// check if POLLOUT is a relevant good events arg [to do]
 	// protect the max connexion number [to do]
+
+	// set poll variables
 	struct pollfd fds[MAX_CONNEXION];
 	for (int i = 0; i < MAX_CONNEXION; i++)
 	{
@@ -80,18 +84,19 @@ int Server::startServer(void)
 	fds[0].fd = 0;
 	fds[1].fd = _socket;
 	int nfds = 2;
-	int newClient = -1;
+
+	// initialize client
+	int fdClient = -1;
 	sockaddr_in addrClient;
 	socklen_t len = sizeof(addrClient);
-	bool msgBeginning = true;
-	char buffer[BUFFER_SIZE];
-	std::string input;
 
-	// check if useful to "memset"
+	// variables for received content
+	bool msgBeginning = true;
+	std::string input; // stdin
+	char buffer[BUFFER_SIZE]; // clients
 	for (size_t i = 0; i < sizeof(buffer); i++)
 		buffer[i] = 0;
 
-	
 	while (1)
 	{
 		if (poll(fds, nfds, 0) == ERROR)
@@ -111,19 +116,20 @@ int Server::startServer(void)
 		// server socket
 		if (fds[1].revents != 0)
 		{
-			newClient = accept(_socket, (sockaddr*)&addrClient, &len);
-			if (newClient == ERROR)
+			fdClient = accept(_socket, (sockaddr*)&addrClient, &len);
+			if (fdClient == ERROR)
 			{
 				std::cerr << RED << "Error: accept failed" << RESET << std::endl;
 				return (1);
 			}
 			std::cout << "New connection" << std::endl;
-			fds[nfds].fd = newClient;
+			_clients.push_back(new Client(fdClient));
+			fds[nfds].fd = fdClient;
 			nfds++;
 		}
 
 		// client sockets
-		for (int i = 2; i < nfds; i++)
+		for (int i = FIRST_CLIENT; i < nfds; i++)
 		{
 			if (fds[i].revents == 0)
 				continue ;
@@ -178,7 +184,7 @@ int Server::startServer(void)
 			std::cout << buffer;
 
 			// print message to all clients
-			for (int j = 2; j < nfds; j++)
+			for (int j = FIRST_CLIENT; j < nfds; j++)
 				if (j != i)
 					send(fds[j].fd, buffer, sizeof(buffer), 0);
 
@@ -192,7 +198,7 @@ int Server::startServer(void)
 	}
 
 	// closing fd clients still connected when server ends
-	for (int i = 2; i < nfds; i++)
+	for (int i = FIRST_CLIENT; i < nfds; i++)
 		if (fds[i].fd > 0)
 			close(fds[i].fd);
 

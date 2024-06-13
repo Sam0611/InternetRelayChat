@@ -1,34 +1,35 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.hpp                                         :+:      :+:    :+:   */
+/*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: sam </var/spool/mail/sam>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/06/09 18:04:59 by sam               #+#    #+#             */
-/*   Updated: 2024/06/09 18:05:03 by sam              ###   ########.fr       */
+/*   Created: 2024/06/13 13:26:19 by sam               #+#    #+#             */
+/*   Updated: 2024/06/13 13:26:21 by sam              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __SERVER__
-#define __SERVER__
+#ifndef __CHANNEL__
+#define __CHANNEL__
 
 #include "utils.hpp"
-#include "Client.hpp"
 
-class Server
+class Channel
 {
-    public:
-        Server();
-        ~Server();
-        int createServer(char *input);
-        int startServer(void);
 
     private:
-        std::string             _host;
-        long                    _port;
-        int                     _socket;
-        std::vector<Client *>   _clients;
+        Channel();
+        std::string _name;
+        std::map<char, bool> _mode; // char = i, t, k, (o)
+        // std::string _password;
+        // std::string _operator;
+
+    public:
+        Channel(std::string name);
+        ~Channel();
+        bool getMode(char mode) const;
+        void changeMode(char mode, char change); // change = +/-
 };
 
 #endif

@@ -1,34 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.hpp                                         :+:      :+:    :+:   */
+/*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: sam </var/spool/mail/sam>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/06/09 18:04:59 by sam               #+#    #+#             */
-/*   Updated: 2024/06/09 18:05:03 by sam              ###   ########.fr       */
+/*   Created: 2024/06/13 13:26:33 by sam               #+#    #+#             */
+/*   Updated: 2024/06/13 13:26:34 by sam              ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __SERVER__
-#define __SERVER__
-
-#include "utils.hpp"
 #include "Client.hpp"
 
-class Server
+Client::Client() : _fd(-1)
 {
-    public:
-        Server();
-        ~Server();
-        int createServer(char *input);
-        int startServer(void);
+}
 
-    private:
-        std::string             _host;
-        long                    _port;
-        int                     _socket;
-        std::vector<Client *>   _clients;
-};
+Client::Client(int fd) : _fd(fd)
+{
+}
 
-#endif
+Client::~Client()
+{
+}

@@ -17,6 +17,8 @@
 
 #include <iostream>
 #include <string.h>
+#include <vector>
+#include <map>
 #include <unistd.h> // close
 #include <stdlib.h> // strtol
 #include <cctype> // isdigit
@@ -32,5 +34,6 @@
 #define ERROR -1
 #define MAX_CONNEXION 10
 #define BUFFER_SIZE 1024
+#define FIRST_CLIENT 2
 
 #endif
