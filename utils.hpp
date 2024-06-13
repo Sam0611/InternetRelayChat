@@ -21,7 +21,7 @@
 #include <stdlib.h> // strtol
 #include <cctype> // isdigit
 #include <sys/socket.h> // socket
-#include <netinet/in.h> // sockaddr_in htons
+#include <netinet/in.h> // sockaddr_in htons recv
 #include <poll.h> // poll
 
 

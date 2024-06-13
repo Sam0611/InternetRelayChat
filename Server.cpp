@@ -72,15 +72,20 @@ int Server::startServer(void)
 	// check if POLLOUT is a relevant good events arg [to do]
 	// protect the max connexion number [to do]
 	struct pollfd fds[MAX_CONNEXION];
-	fds[0].fd = _socket;
-	fds[0].events = POLLIN;
-	fds[0].revents = 0;
-	int nfds = 1;
+	for (int i = 0; i < MAX_CONNEXION; i++)
+	{
+		fds[i].events = POLLIN;
+		fds[i].revents = 0;
+	}
+	fds[0].fd = 0;
+	fds[1].fd = _socket;
+	int nfds = 2;
 	int newClient = -1;
 	sockaddr_in addrClient;
 	socklen_t len = sizeof(addrClient);
 	bool msgBeginning = true;
 	char buffer[BUFFER_SIZE];
+	std::string input;
 
 	// check if useful to "memset"
 	for (size_t i = 0; i < sizeof(buffer); i++)
@@ -95,8 +100,16 @@ int Server::startServer(void)
 			return (1);
 		}
 
-		// server socket
+		// stdin
 		if (fds[0].revents != 0)
+		{
+			std::cin >> input;
+            if (input == "exit")
+				break ;
+		}
+
+		// server socket
+		if (fds[1].revents != 0)
 		{
 			newClient = accept(_socket, (sockaddr*)&addrClient, &len);
 			if (newClient == ERROR)
@@ -106,20 +119,18 @@ int Server::startServer(void)
 			}
 			std::cout << "New connection" << std::endl;
 			fds[nfds].fd = newClient;
-			fds[nfds].events = POLLIN;
-			fds[nfds].revents = 0;	// initialization to avoid conditional jump
 			nfds++;
 		}
 
 		// client sockets
-		for (int i = 1; i < nfds; i++)
+		for (int i = 2; i < nfds; i++)
 		{
 			if (fds[i].revents == 0)
 				continue ;
 
-			if (fds[i].revents == 25)
+			if (fds[i].revents != POLLIN)
 			{
-				std::cout << "connection closed with revent = 25" << std::endl;
+				std::cout << "connection closed" << std::endl;
 				nfds--;
 				close(fds[i].fd);
 				if (i != nfds)
@@ -167,7 +178,7 @@ int Server::startServer(void)
 			std::cout << buffer;
 
 			// print message to all clients
-			for (int j = 1; j < nfds; j++)
+			for (int j = 2; j < nfds; j++)
 				if (j != i)
 					send(fds[j].fd, buffer, sizeof(buffer), 0);
 
@@ -175,9 +186,9 @@ int Server::startServer(void)
 			if (buffer[msglen - 1] == '\n')
 				msgBeginning = true;
 
-			for (int i = 0; buffer[i]; i++)
-				buffer[i] = 0;
+			for (int j = 0; buffer[j]; j++)
+				buffer[j] = 0;
 		}
-		sleep(1);
 	}
+	return (0);
 }
