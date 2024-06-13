@@ -190,5 +190,11 @@ int Server::startServer(void)
 				buffer[j] = 0;
 		}
 	}
+
+	// closing fd clients still connected when server ends
+	for (int i = 2; i < nfds; i++)
+		if (fds[i].fd > 0)
+			close(fds[i].fd);
+
 	return (0);
 }
