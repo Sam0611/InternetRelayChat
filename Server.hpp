@@ -18,17 +18,20 @@
 
 class Server
 {
-    public:
-        Server();
-        ~Server();
-        int createServer(char *input);
-        int startServer(void);
-
     private:
+        Server();
         std::string             _host;
+        const std::string       _password;
         long                    _port;
         int                     _socket;
         std::vector<Client *>   _clients;
+        void process_input_log(char *input);
+
+    public:
+        Server(std::string password);
+        ~Server();
+        int createServer(char *input);
+        int startServer(void);
 };
 
 #endif

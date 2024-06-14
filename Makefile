@@ -10,7 +10,7 @@
 #                                                                              #
 # **************************************************************************** #
 
-SRCS	= main.cpp Server.cpp Client.cpp
+SRCS	= main.cpp Server.cpp Client.cpp utils.cpp
 
 OBJS	= ${SRCS:.cpp=.o}
 

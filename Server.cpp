@@ -17,7 +17,7 @@
 #define VALID_PORT_MIN 1024
 #define VALID_PORT_MAX 65535
 
-Server::Server() : _host("127.0.0.1"), _port(-1), _socket(-1)
+Server::Server(std::string password) : _host("127.0.0.1"), _password(password), _port(-1), _socket(-1)
 {
 }
 
@@ -91,7 +91,7 @@ int Server::startServer(void)
 	socklen_t len = sizeof(addrClient);
 
 	// variables for received content
-	bool msgBeginning = true;
+	// bool msgBeginning = true;
 	std::string input; // stdin
 	char buffer[BUFFER_SIZE]; // clients
 	for (size_t i = 0; i < sizeof(buffer); i++)
@@ -143,6 +143,8 @@ int Server::startServer(void)
 					fds[i].fd = fds[nfds].fd;
 				fds[nfds].fd = 0;
 				fds[i].revents = 0;
+				delete _clients[i - FIRST_CLIENT];
+				_clients.erase(_clients.begin() + (i - FIRST_CLIENT));
 				continue ;
 			}
 			
@@ -162,35 +164,45 @@ int Server::startServer(void)
 					fds[i].fd = fds[nfds].fd;
 				fds[nfds].fd = 0;
 				fds[i].revents = 0;
+				delete _clients[i - FIRST_CLIENT];
+				_clients.erase(_clients.begin() + (i - FIRST_CLIENT));
 				continue ;
 			}
 
+			// process input as command (PASS / NICK / USER)
+			_clients[i - FIRST_CLIENT]->log_in(buffer, _password);
+
+			// if client fullfilled info -> check usernames available
+			_clients[i - FIRST_CLIENT]->check_informations();
+
+
+
 			// if message is \n only, then do nothing
-			if (msgBeginning && buffer[0] == '\n')
-			{
-				buffer[0] = 0;
-				continue ;
-			}
+			// if (msgBeginning && buffer[0] == '\n')
+			// {
+			// 	buffer[0] = 0;
+			// 	continue ;
+			// }
 
 			// put a \0 at the end of message
 			// buffer[msglen] = 0;
 
 			// print message in server side
-			if (msgBeginning)
-			{
-				std::cout << "Received : ";
-				msgBeginning = false;
-			}
-			std::cout << buffer;
+			// if (msgBeginning)
+			// {
+			// 	std::cout << "Received : ";
+			// 	msgBeginning = false;
+			// }
+			// std::cout << buffer;
 
 			// print message to all clients
-			for (int j = FIRST_CLIENT; j < nfds; j++)
-				if (j != i)
-					send(fds[j].fd, buffer, sizeof(buffer), 0);
+			// for (int j = FIRST_CLIENT; j < nfds; j++)
+			// 	if (j != i)
+			// 		send(fds[j].fd, buffer, sizeof(buffer), 0);
 
 			// if message ends with \n, the next will be starting
-			if (buffer[msglen - 1] == '\n')
-				msgBeginning = true;
+			// if (buffer[msglen - 1] == '\n')
+			// 	msgBeginning = true;
 
 			for (int j = 0; buffer[j]; j++)
 				buffer[j] = 0;

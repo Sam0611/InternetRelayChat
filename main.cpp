@@ -22,13 +22,15 @@ bool is_only_numbers(char *port)
 
 int	main(int ac, char **av)
 {
-	if (ac != 2) // 3 mdp
+	if (ac != 3)
 	{
         std::cerr << RED << "Error: Wrong number of arguments" << RESET << std::endl;
 		return (1);
 	}
 
-	Server server;
+	std::string password(av[2]);
+
+	Server server(password);
 
 	if (!is_only_numbers(av[1]))
 	{

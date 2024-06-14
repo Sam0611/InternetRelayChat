@@ -21,11 +21,18 @@ class Client
         Client();
         Client(int fd);
         ~Client();
+        void log_in(char *input, const std::string password);
+        bool check_informations() const;
 
     private:
-        int _fd;
-        std::string _username[4]; // maybe 5
-        // std::vector<Channel *> _channels;
+        int         _fd;
+        bool        _pass;
+        std::string _name;
+        std::vector<std::string> _username;
+        // std::vector<std::string> _channels;
+        void check_password_input(std::vector<std::string> msg, std::string password);
+        void set_nickname(std::vector<std::string> msg);
+        void set_usernames(std::vector<std::string> msg);
 };
 
 #endif

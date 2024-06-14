@@ -36,4 +36,8 @@
 #define BUFFER_SIZE 1024
 #define FIRST_CLIENT 2
 
+/*      FUNCTIONS       */
+
+std::vector<std::string> splitString(std::string str, char delimiter);
+
 #endif
