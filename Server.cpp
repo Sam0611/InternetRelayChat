@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server.cpp                                         :+:      :+:    :+:   */
+/*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: sam </var/spool/mail/sam>                  +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/09 18:05:08 by sam               #+#    #+#             */
-/*   Updated: 2024/06/09 18:05:10 by sam              ###   ########.fr       */
+/*   Updated: 2024/06/16 18:10:22 by smalloir         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,18 @@ int Server::createServer(char *input)
     return (_socket);
 }
 
-void Server::process_commands(char *input)
+void Server::send_private_message(std::vector<std::string> msg, int id)
+{
+	msg.erase(msg.begin());
+	std::cout << _clients[id]->getName() << " to " << msg[0] << " : ";
+	msg.erase(msg.begin());
+	for (size_t i = 0; i < msg.size(); i++)
+        std::cout << msg[i] << " ";
+	std::cout << std::endl;
+	// send(destfd, buffer, sizeof(buffer), 0);
+}
+
+void Server::process_commands(char *input, int id)
 {
 	std::string str(input);
     str.erase(str.size() - 1); // remove \n at the end
@@ -80,10 +91,13 @@ void Server::process_commands(char *input)
     while (i < 10 && cmd[i].compare(msg[0]))
         i++;
 
+	// deleting part of msg containing command name
+	// msg.erase(msg.begin());
+
     switch(i)
     {
         case 0: // PRIVMSG
-            std::cout << "private message sent" << std::endl;
+			send_private_message(msg, id);
 			break ;
         case 1: // JOIN
             std::cout << "join chan" << std::endl;
@@ -247,7 +261,7 @@ int Server::startServer(void)
 			{
 				std::cout << "Received : " << buffer;
 				// process IRC commands
-				process_commands(buffer);
+				process_commands(buffer, i - FIRST_CLIENT);
 			}
 			
 
