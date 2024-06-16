@@ -91,6 +91,27 @@ void Server::process_commands(char *input)
         case 2: // PART
             std::cout << "leaving chan" << std::endl;
 			break ;
+        case 3: // TOPIC
+            std::cout << "topic" << std::endl;
+			break ;
+        case 4: // INVITE
+            std::cout << "invite" << std::endl;
+			break ;
+        case 5: // KICK
+            std::cout << "kick" << std::endl;
+			break ;
+        case 6: // MODE
+            std::cout << "changing mode" << std::endl;
+			break ;
+        case 7: // QUIT
+            std::cout << "leaving irc" << std::endl;
+			break ;
+        case 8: // LIST
+            std::cout << "list of chan" << std::endl;
+			break ;
+        case 9: // HELP
+            std::cout << "help" << std::endl;
+			break ;
         default:
             std::cerr << RED << "Error: wrong command" << RESET << std::endl;
     }
