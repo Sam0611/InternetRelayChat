@@ -12,11 +12,11 @@
 
 #include "Client.hpp"
 
-Client::Client() : _fd(-1), _pass(false)
+Client::Client() : info_set(false), _fd(-1), _pass(false)
 {
 }
 
-Client::Client(int fd) : _fd(fd), _pass(false)
+Client::Client(int fd) : info_set(false), _fd(fd), _pass(false)
 {
 }
 
@@ -140,15 +140,34 @@ void Client::log_in(char *input, const std::string password)
     }
 }
 
-bool Client::check_informations() const
+bool Client::check_informations()
 {
     if (!_pass || _name.empty() || _username.size() != 4)
-        return (false);
+        info_set = false;
+    else
+        info_set = true;
+    return (info_set);
+}
 
-    std::cout << _name << " (" << _username[0] << ", ";
-    std::cout << _username[1] << ", ";
-    std::cout << _username[2] << ", ";
-    std::cout << _username[3] << ") is logged" << std::endl;
+std::string Client::getName() const
+{
+    return (_name);
+}
 
-    return (true);
+void Client::compareNames(std::string name)
+{
+    if (!_name.compare(name))
+    {
+        _name.clear();
+        if (_username.size())
+        {
+            _name = _username[0];
+            _username.erase(_username.begin());
+        }
+        return ;
+    }
+
+    for (size_t i = 0; i < _username.size(); i++)
+        if (!_username[i].compare(name))
+            _username.erase(_username.begin() + i);
 }

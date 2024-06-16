@@ -36,5 +36,11 @@ int main(int ac, char **av)
     for (size_t i = 0; i < vec.size(); i++)
         std::cout << i << " : " << vec[i] << std::endl;
 
+    str.clear();
+    if (str.empty())
+        std::cout << "str is empty" << std::endl;
+    else
+        std::cout << "str is NOT empty" << std::endl;
+
     return (0);
 }

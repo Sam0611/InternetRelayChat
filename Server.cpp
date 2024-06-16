@@ -69,6 +69,23 @@ int Server::createServer(char *input)
     return (_socket);
 }
 
+bool is_available_username(std::vector<Client *> clients, size_t id)
+{
+	for (size_t i = 0; i < clients.size(); i++)
+	{
+		if (id == i || !clients[i]->info_set)
+			continue ;
+		clients[id]->compareNames(clients[i]->getName());
+		if (clients[id]->getName().empty())
+		{
+			std::cerr << RED << "Usernames not available" << RESET << std::endl;
+			return (false);
+		}
+	}
+	std::cout << clients[id]->getName() << " is logged" << std::endl;
+	return (true);
+}
+
 int Server::startServer(void)
 {
 	// check if POLLOUT is a relevant good events arg [to do]
@@ -169,12 +186,23 @@ int Server::startServer(void)
 				continue ;
 			}
 
-			// process input as command (PASS / NICK / USER)
-			_clients[i - FIRST_CLIENT]->log_in(buffer, _password);
+			if (!_clients[i - FIRST_CLIENT]->info_set)
+			{
+				// process input as command (PASS / NICK / USER)
+				_clients[i - FIRST_CLIENT]->log_in(buffer, _password);
 
-			// if client fullfilled info -> check usernames available
-			_clients[i - FIRST_CLIENT]->check_informations();
+				// if client fullfilled info -> check if username is available
+				if (_clients[i - FIRST_CLIENT]->check_informations())
+					_clients[i - FIRST_CLIENT]->info_set = is_available_username(_clients, i - FIRST_CLIENT);
+			}
+			else
+			{
+				std::cout << "Received : " << buffer;
+				// process IRC commands
+			}
+			
 
+			
 
 
 			// if message is \n only, then do nothing

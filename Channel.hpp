@@ -17,18 +17,17 @@
 
 class Channel
 {
-
     private:
         Channel();
         std::string _name;
-        std::map<char, bool> _mode; // char = i, t, k, (o)
-        // std::string _password;
-        // std::string _operator;
+        std::map<char, bool> _mode; // char = i, t, k, l
+        std::string _password;
+        std::vector<std::string> _operator;
 
     public:
-        Channel(std::string name);
+        Channel(std::string name, std::string op);
         ~Channel();
-        bool getMode(char mode) const;
+        bool getMode(char mode); // mode = i/t/k/o/l
         void changeMode(char mode, char change); // change = +/-
 };
 

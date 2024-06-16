@@ -15,6 +15,7 @@
 
 #include "utils.hpp"
 #include "Client.hpp"
+#include "Channel.hpp"
 
 class Server
 {
@@ -25,6 +26,7 @@ class Server
         long                    _port;
         int                     _socket;
         std::vector<Client *>   _clients;
+        std::vector<Channel *>   _channels;
         void process_input_log(char *input);
 
     public:
