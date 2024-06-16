@@ -69,6 +69,33 @@ int Server::createServer(char *input)
     return (_socket);
 }
 
+void Server::process_commands(char *input)
+{
+	std::string str(input);
+    str.erase(str.size() - 1); // remove \n at the end
+	std::string cmd[10] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP"};
+    std::vector<std::string> msg = splitString(str, ' ');
+
+    size_t i = 0;
+    while (i < 10 && cmd[i].compare(msg[0]))
+        i++;
+
+    switch(i)
+    {
+        case 0: // PRIVMSG
+            std::cout << "private message sent" << std::endl;
+			break ;
+        case 1: // JOIN
+            std::cout << "join chan" << std::endl;
+			break ;
+        case 2: // PART
+            std::cout << "leaving chan" << std::endl;
+			break ;
+        default:
+            std::cerr << RED << "Error: wrong command" << RESET << std::endl;
+    }
+}
+
 bool is_available_username(std::vector<Client *> clients, size_t id)
 {
 	for (size_t i = 0; i < clients.size(); i++)
@@ -199,6 +226,7 @@ int Server::startServer(void)
 			{
 				std::cout << "Received : " << buffer;
 				// process IRC commands
+				process_commands(buffer);
 			}
 			
 

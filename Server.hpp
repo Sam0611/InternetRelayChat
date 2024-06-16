@@ -27,7 +27,7 @@ class Server
         int                     _socket;
         std::vector<Client *>   _clients;
         std::vector<Channel *>   _channels;
-        void process_input_log(char *input);
+        void process_commands(char *input);
 
     public:
         Server(std::string password);

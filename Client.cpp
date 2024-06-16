@@ -121,7 +121,7 @@ void Client::log_in(char *input, const std::string password)
     std::vector<std::string> msg = splitString(str, ' ');
 
     size_t i = 0;
-    while (i < cmd->size() - 1 && cmd[i].compare(msg[0]))
+    while (i < 3 && cmd[i].compare(msg[0]))
         i++;
 
     switch(i)
@@ -147,6 +147,11 @@ bool Client::check_informations()
     else
         info_set = true;
     return (info_set);
+}
+
+int Client::getFd() const
+{
+    return (_fd);
 }
 
 std::string Client::getName() const

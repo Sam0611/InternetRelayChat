@@ -32,6 +32,7 @@ int main(int ac, char **av)
     vec = splitString(str, ' ');
 
     vec.insert(vec.begin(), "coucou");
+    // vec.erase(vec.begin() + 1);
 
     for (size_t i = 0; i < vec.size(); i++)
         std::cout << i << " : " << vec[i] << std::endl;
@@ -41,6 +42,9 @@ int main(int ac, char **av)
         std::cout << "str is empty" << std::endl;
     else
         std::cout << "str is NOT empty" << std::endl;
+
+    const char *buffer = "Salut";
+    std::cout << buffer << std::endl;
 
     return (0);
 }

@@ -24,11 +24,12 @@ class Client
         void log_in(char *input, const std::string password);
         bool info_set;
         bool check_informations();
+        int getFd() const; // not used
         std::string getName() const;
         void compareNames(std::string name);
 
     private:
-        int         _fd;
+        int         _fd; // still not used -> delete ?
         bool        _pass;
         std::string _name;
         std::vector<std::string> _username;
