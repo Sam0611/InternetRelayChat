@@ -136,7 +136,9 @@ void Client::log_in(char *input, const std::string password)
             set_usernames(msg);
 			break ;
         default:
-            std::cerr << RED << "Wrong command, use PASS / NICK / USER" << RESET << std::endl;
+            std::string s = "Wrong command, use PASS / NICK / USER\n";
+            send(_fd, s.c_str(), s.length(), 0);
+            std::cerr << RED << s << RESET;
     }
 }
 

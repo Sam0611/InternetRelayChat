@@ -43,8 +43,11 @@ int main(int ac, char **av)
     else
         std::cout << "str is NOT empty" << std::endl;
 
-    const char *buffer = "Salut";
-    std::cout << buffer << std::endl;
+    std::string s = "Salut";
+    std::string name = "Sam";
+    s.push_back(' ');
+    s.append(name);
+    std::cout << s << std::endl;
 
     return (0);
 }

@@ -69,15 +69,46 @@ int Server::createServer(char *input)
     return (_socket);
 }
 
+int Server::getFdByName(const std::string name)
+{
+	for (size_t i = 0; i < _clients.size(); i++)
+		if (!name.compare(_clients[i]->getName()))
+			return (_clients[i]->getFd());
+
+	return (ERROR);
+}
+
+// receiver can be channels and are separated by commas
 void Server::send_private_message(std::vector<std::string> msg, int id)
 {
-	msg.erase(msg.begin());
-	std::cout << _clients[id]->getName() << " to " << msg[0] << " : ";
-	msg.erase(msg.begin());
-	for (size_t i = 0; i < msg.size(); i++)
-        std::cout << msg[i] << " ";
-	std::cout << std::endl;
-	// send(destfd, buffer, sizeof(buffer), 0);
+	// check the buffer size (must contain receiver and message content)
+	if (msg.size() < 2)
+    {
+        std::cerr << RED << "Error: wrong number of arguments" << RESET << std::endl;
+        return ;
+    }
+
+	// check if nickname is the same as the client sending message
+	if (!msg[0].compare(_clients[id]->getName()))
+		return ;
+
+	int destfd = getFdByName(msg[0]);
+	if (destfd == ERROR) // if no user was found
+	{
+        std::cerr << RED << "Error: user not found" << RESET << std::endl; // send to client
+		return ;
+	}
+
+	std::cout << _clients[id]->getName() << " to " << msg[0] << " : " << msg[1] << std::endl;
+
+	// formatting message content in one string
+	std::string msgContent = _clients[id]->getName();
+	msgContent.append(": ");
+	msgContent.append(msg[1]);
+	msgContent.push_back('\n');
+
+	// send message content
+	send(destfd, msgContent.c_str(), msgContent.length(), 0);
 }
 
 void Server::process_commands(char *input, int id)
@@ -85,14 +116,16 @@ void Server::process_commands(char *input, int id)
 	std::string str(input);
     str.erase(str.size() - 1); // remove \n at the end
 	std::string cmd[10] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP"};
-    std::vector<std::string> msg = splitString(str, ' ');
+    std::vector<std::string> msg = splitString(str, ' ', 2);
 
     size_t i = 0;
     while (i < 10 && cmd[i].compare(msg[0]))
+	{
         i++;
+	}
 
 	// deleting part of msg containing command name
-	// msg.erase(msg.begin());
+	msg.erase(msg.begin());
 
     switch(i)
     {
@@ -195,12 +228,24 @@ int Server::startServer(void)
 		// server socket
 		if (fds[1].revents != 0)
 		{
+			// receiving new connection
 			fdClient = accept(_socket, (sockaddr*)&addrClient, &len);
 			if (fdClient == ERROR)
 			{
 				std::cerr << RED << "Error: accept failed" << RESET << std::endl;
 				return (1);
 			}
+
+			// check if number of max connection has been reached
+			if (nfds == MAX_CONNEXION)
+			{
+				std::cerr << RED << "Error: number of max connection reached" << RESET << std::endl;
+				close(fdClient);
+				fdClient = -1;
+				continue ;
+			}
+
+			// add new client
 			std::cout << "New connection" << std::endl;
 			_clients.push_back(new Client(fdClient));
 			fds[nfds].fd = fdClient;
