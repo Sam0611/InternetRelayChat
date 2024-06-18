@@ -16,7 +16,7 @@
 /*      INCLUDES        */
 
 #include <iostream>
-#include <string.h>
+#include <string>
 #include <vector>
 #include <map>
 #include <unistd.h> // close
@@ -33,12 +33,29 @@
 #define RESET "\033[00m"
 #define ERROR -1
 #define MAX_CONNEXION 10
+#define MAX_CHANNEL 10
 #define BUFFER_SIZE 1024
 #define FIRST_CLIENT 2
 
+/*      ENUM            */
+
+enum err
+{
+    COMMAND_NOT_FOUND,
+    WRONG_ARG_NUMBER,
+    USERNAME_NOT_AVAILABLE,
+    WRONG_PASSWORD,
+    PARAMETER_ALREADY_SET,
+    INVALID_NAME,
+    USER_NOT_FOUND,
+    INVALID_FORMAT,
+    TOO_MANY_KEYS
+};
+
 /*      FUNCTIONS       */
 
+void print_error_message(int e, int fd);
 std::vector<std::string> splitString(std::string str, char delimiter);
-std::vector<std::string> splitString(std::string str, char delimiter, int n);
+std::vector<std::string> splitString(std::string str, char delimiter, char end);
 
 #endif

@@ -28,33 +28,33 @@ void Client::check_password_input(std::vector<std::string> msg, std::string pass
 {
     if (_pass)
     {
-        std::cerr << RED << "Password already confirmed" << RESET << std::endl;
+        print_error_message(PARAMETER_ALREADY_SET, _fd);
         return ;
     }
 
     if (msg.size() != 2)
     {
-        std::cerr << RED << "Error: wrong number of arguments" << RESET << std::endl;
+        print_error_message(WRONG_ARG_NUMBER, _fd);
         return ;
     }
 
     if (!msg[1].compare(password))
         _pass = true;
     else
-        std::cerr << RED << "Error: wrong password" << RESET << std::endl;
+        print_error_message(WRONG_PASSWORD, _fd);
 }
 
 void Client::set_nickname(std::vector<std::string> msg)
 {
     if (!_name.empty())
     {
-        std::cerr << RED << "Nickname already set" << RESET << std::endl;
+        print_error_message(PARAMETER_ALREADY_SET, _fd);
         return ;
     }
 
     if (msg.size() != 2)
     {
-        std::cerr << RED << "Error: wrong number of arguments" << RESET << std::endl;
+        print_error_message(WRONG_ARG_NUMBER, _fd);
         return ;
     }
 
@@ -74,13 +74,13 @@ void Client::set_usernames(std::vector<std::string> msg)
 {
     if (_username.size())
     {
-        std::cerr << RED << "Usernames already set" << RESET << std::endl;
+        print_error_message(PARAMETER_ALREADY_SET, _fd);
         return ;
     }
 
     if (msg.size() != 5)
     {
-        std::cerr << RED << "Error: wrong number of arguments" << RESET << std::endl;
+        print_error_message(WRONG_ARG_NUMBER, _fd);
         return ;
     }
 
@@ -136,9 +136,7 @@ void Client::log_in(char *input, const std::string password)
             set_usernames(msg);
 			break ;
         default:
-            std::string s = "Wrong command, use PASS / NICK / USER\n";
-            send(_fd, s.c_str(), s.length(), 0);
-            std::cerr << RED << s << RESET;
+            print_error_message(COMMAND_NOT_FOUND, _fd);
     }
 }
 
@@ -177,4 +175,38 @@ void Client::compareNames(std::string name)
     for (size_t i = 0; i < _username.size(); i++)
         if (!_username[i].compare(name))
             _username.erase(_username.begin() + i);
+}
+
+void Client::addChannel(std::string name)
+{
+    std::string errorMessage;
+
+    // check if already in the channel
+    for (size_t i = 0; i < _channelNames.size(); i++)
+    {
+        if (!_channelNames[i].compare(name))
+        {
+            errorMessage = "You already joined this channel\n";
+            send(_fd, errorMessage.c_str(), errorMessage.length(), 0);
+            return ;
+        }
+    }
+
+    // check if already in 10 channels (max)
+    if (_channelNames.size() == MAX_CHANNEL)
+    {
+        errorMessage = "You can't join more channels\n";
+        send(_fd, errorMessage.c_str(), errorMessage.length(), 0);
+        return ;
+    }
+
+    _channelNames.push_back(name);
+}
+
+bool Client::isInChannel(std::string name)
+{
+    for (size_t i = 0; i < _channelNames.size(); i++)
+        if (!_channelNames[i].compare(name))
+            return (true);
+    return (false);
 }

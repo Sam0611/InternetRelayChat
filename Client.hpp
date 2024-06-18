@@ -27,6 +27,8 @@ class Client
         int getFd() const;
         std::string getName() const;
         void compareNames(std::string name);
+        void addChannel(std::string name);
+        bool isInChannel(std::string name);
 
     private:
         int         _fd;

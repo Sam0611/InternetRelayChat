@@ -25,6 +25,8 @@ Server::~Server()
 {
 	for (size_t i = 0; i < _clients.size(); i++)
 		delete _clients[i];
+	for (size_t i = 0; i < _channels.size(); i++)
+		delete _channels[i];
     if (_socket > 0)
         close(_socket);
 }
@@ -78,37 +80,135 @@ int Server::getFdByName(const std::string name)
 	return (ERROR);
 }
 
-// receiver can be channels and are separated by commas
 void Server::send_private_message(std::vector<std::string> msg, int id)
 {
 	// check the buffer size (must contain receiver and message content)
 	if (msg.size() < 2)
     {
-        std::cerr << RED << "Error: wrong number of arguments" << RESET << std::endl;
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
         return ;
     }
 
-	// check if nickname is the same as the client sending message
-	if (!msg[0].compare(_clients[id]->getName()))
-		return ;
-
-	int destfd = getFdByName(msg[0]);
-	if (destfd == ERROR) // if no user was found
+	// check message format (must begin with ':')
+	if (msg[1][0] != ':')
 	{
-        std::cerr << RED << "Error: user not found" << RESET << std::endl; // send to client
+        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
 		return ;
 	}
 
-	std::cout << _clients[id]->getName() << " to " << msg[0] << " : " << msg[1] << std::endl;
+	// get receivers separated by commas
+	std::vector<std::string> receivers = splitString(msg[0], ',');
 
-	// formatting message content in one string
-	std::string msgContent = _clients[id]->getName();
-	msgContent.append(": ");
-	msgContent.append(msg[1]);
-	msgContent.push_back('\n');
+	std::string msgContent;
+	msg[1].push_back('\n');
+	for (size_t i = 0; i < receivers.size(); i++) // for each receiver
+	{
+		if (receivers[i][0] == '#') // if receiver is a channel
+		{
+			// check sender is in it
+			if (!_clients[id]->isInChannel(receivers[i]))
+			{
+				std::cerr << RED << "'" << receivers[i] << "' not joined" << RESET << std::endl;
+				continue ;
+			}
 
-	// send message content
-	send(destfd, msgContent.c_str(), msgContent.length(), 0);
+			// send message to everyone in the channel
+			for (size_t j = 0; j < _channels.size(); j++)
+				if (!receivers[i].compare(_channels[j]->getName()))
+					_channels[j]->sendMessage(_clients[id]->getName(), msg[1]);
+		}
+		else // if receiver is a nickname
+		{
+			// check if nickname is the same as the client sending message
+			if (!receivers[i].compare(_clients[id]->getName()))
+				continue ;
+
+			// check if exist
+			int destfd = getFdByName(receivers[i]);
+			if (destfd == ERROR) // if username not found
+			{
+				std::cerr << RED << "'" << receivers[i] << "' not found" << RESET << std::endl;
+				continue ;
+			}
+
+			// formatting message content in one string
+			msgContent = _clients[id]->getName();
+			msgContent.append(msg[1]);
+
+			// send message content
+			send(destfd, msgContent.c_str(), msgContent.length(), 0);
+		}
+	}
+}
+
+// JOIN #chan1,#chan2,#chan3 mdp1,mdp2
+void Server::join_channel(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain at least a channel name and may have password)
+	if (msg.size() != 1 && msg.size() != 2)
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	std::vector<std::string> channelNames;
+	std::vector<std::string> channelPasswords;
+
+	channelNames = splitString(msg[0], ',');
+	if (msg.size() == 2)
+		channelPasswords = splitString(msg[1], ',');
+
+	// check if there is more passwords than channel names
+	if (channelPasswords.size() > channelNames.size())
+    {
+        print_error_message(TOO_MANY_KEYS, _clients[id]->getFd());
+        return ;
+    }
+
+	// parsing channels name
+	for (size_t i = 0; i < channelNames.size(); i++)
+	{
+		// check if channel name begins with '#'
+		if (channelNames[i][0] != '#')
+		{
+			print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+			return ;
+		}
+
+		// check if valid name, must not contain ‘\a’ (ctrl+G)
+		if (channelNames[i].find('\a') != std::string::npos)
+		{
+			print_error_message(INVALID_NAME, _clients[id]->getFd());
+			return ;
+		}
+	}
+
+	// create and join channels
+	for (size_t i = 0; i < channelNames.size(); i++)
+	{
+		// check if channel exists
+		size_t j;
+		for (j = 0; j < _channels.size(); j++)
+			if (!channelNames[i].compare(_channels[j]->getName()))
+				break ;
+		
+		if (j == _channels.size())
+		{
+			// create new channel
+			_channels.push_back(new Channel(channelNames[i], _clients[id]->getName(), _clients[id]->getFd()));
+			
+			// if password, set mode +k with this password
+		}
+		else
+		{
+			// check mode i/k/l (invite only, need password, limit of user set and reached)
+			// passwords (mdp[1])
+			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
+		}
+
+		// add channel in client class
+		_clients[id]->addChannel(channelNames[i]);
+	}
 }
 
 void Server::process_commands(char *input, int id)
@@ -116,7 +216,7 @@ void Server::process_commands(char *input, int id)
 	std::string str(input);
     str.erase(str.size() - 1); // remove \n at the end
 	std::string cmd[10] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP"};
-    std::vector<std::string> msg = splitString(str, ' ', 2);
+    std::vector<std::string> msg = splitString(str, ' ', ':');
 
     size_t i = 0;
     while (i < 10 && cmd[i].compare(msg[0]))
@@ -133,7 +233,7 @@ void Server::process_commands(char *input, int id)
 			send_private_message(msg, id);
 			break ;
         case 1: // JOIN
-            std::cout << "join chan" << std::endl;
+            join_channel(msg, id);
 			break ;
         case 2: // PART
             std::cout << "leaving chan" << std::endl;
@@ -160,7 +260,7 @@ void Server::process_commands(char *input, int id)
             std::cout << "help" << std::endl;
 			break ;
         default:
-            std::cerr << RED << "Error: wrong command" << RESET << std::endl;
+            print_error_message(COMMAND_NOT_FOUND, _clients[id]->getFd());
     }
 }
 
@@ -173,7 +273,7 @@ bool is_available_username(std::vector<Client *> clients, size_t id)
 		clients[id]->compareNames(clients[i]->getName());
 		if (clients[id]->getName().empty())
 		{
-			std::cerr << RED << "Usernames not available" << RESET << std::endl;
+			print_error_message(USERNAME_NOT_AVAILABLE, clients[id]->getFd());
 			return (false);
 		}
 	}

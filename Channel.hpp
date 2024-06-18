@@ -22,11 +22,17 @@ class Channel
         std::string _name;
         std::map<char, bool> _mode; // char = i, t, k, l
         std::string _password;
+        std::string _topic;
         std::vector<std::string> _operator;
+        std::map<std::string, int> _users;
 
     public:
-        Channel(std::string name, std::string op);
+        Channel(std::string name, std::string opName, int opFd);
         ~Channel();
+        std::string getName() const;
+        void addUser(std::string name, int fd);
+        void removeUser(std::string name);
+        void sendMessage(std::string name, std::string message);
         bool getMode(char mode); // mode = i/t/k/o/l
         void changeMode(char mode, char change); // change = +/-
 };
