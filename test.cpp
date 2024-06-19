@@ -77,11 +77,11 @@ int main(int ac, char **av)
         std::cout << it->first << " : " << it->second << std::endl;
     }
 
-    std::string message = "Hello to everybody !!!";
-    message.insert(0, "Sam: ");
+    std::string message = ":Hello to everybody !!!";
+    std::string name = "#chan";
+    message.insert(0, name.substr(1));
+    message.insert(0, "Sam@");
     std::cout << message << std::endl;
-    if (message.find('o') != std::string::npos)
-        std::cout << "ok" << std::endl;
 
     return (0);
 }

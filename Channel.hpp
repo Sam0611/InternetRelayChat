@@ -33,6 +33,7 @@ class Channel
         void addUser(std::string name, int fd);
         void removeUser(std::string name);
         void sendMessage(std::string name, std::string message);
+        bool isOperator(std::string name);
         bool getMode(char mode); // mode = i/t/k/o/l
         void changeMode(char mode, char change); // change = +/-
 };

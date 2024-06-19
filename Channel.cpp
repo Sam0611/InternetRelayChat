@@ -63,7 +63,9 @@ void Channel::removeUser(std::string name)
 
 void Channel::sendMessage(std::string name, std::string message)
 {
-    // insert sender's name at the beginning of message
+    // insert sender's and channel's name at the beginning of message
+    message.insert(0, _name.substr(1));
+    message.insert(0, "@");
     message.insert(0, name);
 
     // send the message to every users in the channel
@@ -76,6 +78,14 @@ void Channel::sendMessage(std::string name, std::string message)
 
         send(it->second, message.c_str(), message.length(), 0);
     }
+}
+
+bool Channel::isOperator(std::string name)
+{
+    for (size_t i = 0; i < _operator.size(); i++)
+        if (!_operator[i].compare(name))
+            return (true);
+    return (false);
 }
 
 bool Channel::getMode(char mode)

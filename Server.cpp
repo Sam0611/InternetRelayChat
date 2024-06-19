@@ -211,6 +211,41 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 	}
 }
 
+// PART #chan1,#chan2,#chan3
+void Server::leave_channel(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain at channel names)
+	if (msg.size() != 1)
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	std::vector<std::string> channelNames = splitString(msg[0], ',');
+	std::string errorMessage;
+
+	for (size_t i = 0; i < channelNames.size(); i++)
+	{
+		if (!_clients[id]->isInChannel(channelNames[i]))
+		{
+			errorMessage = ": not in that channel\n";
+			errorMessage.insert(0, channelNames[i]);
+			send(_clients[id]->getFd(), errorMessage.c_str(), errorMessage.length(), 0);
+			continue ;
+		}
+
+		_clients[id]->removeChannel(channelNames[i]);
+		for (size_t j = 0; j < _channels.size(); j++)
+		{
+			if (!channelNames[i].compare(_channels[j]->getName()))
+			{
+				_channels[j]->removeUser(_clients[id]->getName());
+				break ;
+			}
+		}
+	}
+}
+
 void Server::process_commands(char *input, int id)
 {
 	std::string str(input);
@@ -236,7 +271,7 @@ void Server::process_commands(char *input, int id)
             join_channel(msg, id);
 			break ;
         case 2: // PART
-            std::cout << "leaving chan" << std::endl;
+            leave_channel(msg, id);
 			break ;
         case 3: // TOPIC
             std::cout << "topic" << std::endl;

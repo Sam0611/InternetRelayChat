@@ -28,6 +28,7 @@ class Client
         std::string getName() const;
         void compareNames(std::string name);
         void addChannel(std::string name);
+        void removeChannel(std::string name);
         bool isInChannel(std::string name);
 
     private:

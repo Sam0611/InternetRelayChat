@@ -182,14 +182,11 @@ void Client::addChannel(std::string name)
     std::string errorMessage;
 
     // check if already in the channel
-    for (size_t i = 0; i < _channelNames.size(); i++)
+    if (isInChannel(name))
     {
-        if (!_channelNames[i].compare(name))
-        {
-            errorMessage = "You already joined this channel\n";
-            send(_fd, errorMessage.c_str(), errorMessage.length(), 0);
-            return ;
-        }
+        errorMessage = "You already joined this channel\n";
+        send(_fd, errorMessage.c_str(), errorMessage.length(), 0);
+        return ;
     }
 
     // check if already in 10 channels (max)
@@ -201,6 +198,18 @@ void Client::addChannel(std::string name)
     }
 
     _channelNames.push_back(name);
+}
+
+void Client::removeChannel(std::string name)
+{
+    for (size_t i = 0; i < _channelNames.size(); i++)
+    {
+        if (!_channelNames[i].compare(name))
+        {
+            _channelNames.erase(_channelNames.begin() + i);
+            return ;
+        }
+    }
 }
 
 bool Client::isInChannel(std::string name)
