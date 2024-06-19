@@ -28,12 +28,14 @@ class Server
         std::vector<Client *>   _clients;
         std::vector<Channel *>   _channels;
         int getFdByName(const std::string name);
+        size_t getClientId(const std::string name);
         size_t getChannelId(const std::string name);
         void process_commands(char *input, int id);
         void send_private_message(std::vector<std::string> msg, int id);
         void join_channel(std::vector<std::string> msg, int id);
         void leave_channel(std::vector<std::string> msg, int id);
         void view_or_change_topic(std::vector<std::string> msg, int id);
+        void kick_from_channel(std::vector<std::string> msg, int id);
         void list_channels(std::vector<std::string> msg, int id);
 
     public:

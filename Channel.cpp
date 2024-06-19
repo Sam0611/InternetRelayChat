@@ -33,11 +33,18 @@ std::string Channel::getName() const
     return (_name);
 }
 
+bool Channel::isMember(std::string name)
+{
+    std::map<std::string, int>::iterator it = _users.find(name);
+    if (it != _users.end())
+        return (true);
+    return (false);
+}
+
 void Channel::addUser(std::string name, int fd)
 {
     // check if user is already in the channel
-    std::map<std::string, int>::iterator it = _users.find(name);
-    if (it != _users.end())
+    if (isMember(name))
     {
         std::cout << name << " is already in the channel " << _name << std::endl;
         return ;

@@ -80,6 +80,15 @@ int Server::getFdByName(const std::string name)
 	return (ERROR);
 }
 
+size_t Server::getClientId(const std::string name)
+{
+	size_t i;
+	for (i = 0; i < _clients.size(); i++)
+		if (!name.compare(_clients[i]->getName()))
+			break ;
+	return (i);
+}
+
 size_t Server::getChannelId(const std::string name)
 {
 	size_t i;
@@ -223,7 +232,7 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 // PART #chan1,#chan2,#chan3
 void Server::leave_channel(std::vector<std::string> msg, int id)
 {
-	// check the buffer size (must contain at channel names)
+	// check the buffer size (must contain channel names)
 	if (msg.size() != 1)
     {
         print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
@@ -296,6 +305,72 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
         print_error_message(PERM_DENIED, _clients[id]->getFd());
 }
 
+// KICK #chan acomet :he is a pain in the ass
+void Server::kick_from_channel(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain a channel name and a username, and may have a comment)
+	if (msg.size() != 2 && msg.size() != 3)
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if comment begins with ':'
+	if (msg.size() == 3 && msg[2][0] != ':')
+    {
+        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if channel exists
+	size_t i = getChannelId(msg[0]);
+	if (i == _channels.size())
+    {
+        print_error_message(CHANNEL_NOT_FOUND, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if executor is operator
+	if (!_channels[i]->isOperator(_clients[id]->getName()))
+	{
+		print_error_message(PERM_DENIED, _clients[id]->getFd());
+		return ;
+	}
+
+	// check if user to kick exists and is in channel
+	size_t j = getClientId(msg[1]);
+	if (j == _clients.size() || !_channels[i]->isMember(msg[1]))
+    {
+        print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
+        return ;
+    }
+
+	// removing
+	_clients[j]->removeChannel(_channels[i]->getName());
+	_channels[i]->removeUser(_clients[i]->getName());
+
+	// get comment
+	std::string reason;
+	if (msg.size() == 3)
+	{
+		reason = " because ";
+		reason.append(msg[2].substr(1));
+	}
+
+	// send message to channel members
+	std::string message = " has been kicked from channel";
+	message.append(reason);
+	message.append("\n");
+	_channels[i]->sendMessage(_clients[j]->getName(), message);
+
+	// send private message to kicked user
+	message = "You've been kicked from channel ";
+	message.append(_channels[i]->getName());
+	message.append(reason);
+	message.append("\n");
+	send(_clients[j]->getFd(), message.c_str(), message.length(), 0);
+}
+
 // LIST
 void Server::list_channels(std::vector<std::string> msg, int id)
 {
@@ -355,7 +430,7 @@ void Server::process_commands(char *input, int id)
             std::cout << "invite" << std::endl;
 			break ;
         case 5: // KICK
-            std::cout << "kick" << std::endl;
+            kick_from_channel(msg, id);
 			break ;
         case 6: // MODE
             std::cout << "changing mode" << std::endl;

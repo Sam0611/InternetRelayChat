@@ -30,6 +30,7 @@ class Channel
         Channel(std::string name, std::string opName, int opFd);
         ~Channel();
         std::string getName() const;
+        bool isMember(std::string name);
         void addUser(std::string name, int fd);
         void removeUser(std::string name);
         void sendMessage(std::string name, std::string message);
