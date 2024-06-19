@@ -296,6 +296,31 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
         print_error_message(PERM_DENIED, _clients[id]->getFd());
 }
 
+// LIST
+void Server::list_channels(std::vector<std::string> msg, int id)
+{
+	// the buffer size must be null
+	if (msg.size())
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if a channel exists
+	if (!_channels.size())
+		return ;
+
+	// list channels name and topic
+	std::string chanList;
+	for (size_t i = 0; i < _channels.size(); i++)
+	{
+		chanList.append(_channels[i]->getName());
+		chanList.append(_channels[i]->getTopic());
+		chanList.append("\n");
+	}
+	send(_clients[id]->getFd(), chanList.c_str(), chanList.length(), 0);
+}
+
 void Server::process_commands(char *input, int id)
 {
 	std::string str(input);
@@ -339,7 +364,7 @@ void Server::process_commands(char *input, int id)
             std::cout << "leaving irc" << std::endl;
 			break ;
         case 8: // LIST
-            std::cout << "list of chan" << std::endl;
+            list_channels(msg, id);
 			break ;
         case 9: // HELP
             std::cout << "help" << std::endl;
