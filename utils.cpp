@@ -75,6 +75,12 @@ void print_error_message(int e, int fd)
         case TOO_MANY_KEYS:
             errorMessage = "Error: there is more passwords than channel names\n";
 			break ;
+        case PERM_DENIED:
+            errorMessage = "Error: permission denied\n";
+			break ;
+        case CHANNEL_NOT_FOUND:
+            errorMessage = "Error: channel not found\n";
+			break ;
         default:
             std::cerr << RED << "No error found" << RESET << std::endl;
             return ;

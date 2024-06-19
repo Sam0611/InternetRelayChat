@@ -80,6 +80,15 @@ int Server::getFdByName(const std::string name)
 	return (ERROR);
 }
 
+size_t Server::getChannelId(const std::string name)
+{
+	size_t i;
+	for (i = 0; i < _channels.size(); i++)
+		if (!name.compare(_channels[i]->getName()))
+			break ;
+	return (i);
+}
+
 void Server::send_private_message(std::vector<std::string> msg, int id)
 {
 	// check the buffer size (must contain receiver and message content)
@@ -246,6 +255,47 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 	}
 }
 
+// TOPIC #chan1 :new topic
+void Server::view_or_change_topic(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain one channel name and may have a topic)
+	if (msg.size() != 1 && msg.size() != 2)
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if channel exists
+	size_t i = getChannelId(msg[0]);
+	if (i == _channels.size())
+    {
+        print_error_message(CHANNEL_NOT_FOUND, _clients[id]->getFd());
+        return ;
+    }
+
+	// view channel's topic
+	if (msg.size() == 1)
+	{
+		std::string topic = _channels[i]->getName();
+		topic.append(_channels[i]->getTopic());
+		send(_clients[id]->getFd(), topic.c_str(), topic.length(), 0);
+		return ;
+	}
+
+	// check if new topic begins with ':'
+	if (msg[1][0] != ':')
+    {
+        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+        return ;
+    }
+
+	// change topic if is operator
+	if (_channels[i]->isOperator(_clients[id]->getName()))
+		_channels[i]->setTopic(_clients[id]->getName(), msg[1]);
+	else
+        print_error_message(PERM_DENIED, _clients[id]->getFd());
+}
+
 void Server::process_commands(char *input, int id)
 {
 	std::string str(input);
@@ -274,7 +324,7 @@ void Server::process_commands(char *input, int id)
             leave_channel(msg, id);
 			break ;
         case 3: // TOPIC
-            std::cout << "topic" << std::endl;
+            view_or_change_topic(msg, id);
 			break ;
         case 4: // INVITE
             std::cout << "invite" << std::endl;

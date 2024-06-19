@@ -49,7 +49,9 @@ enum err
     INVALID_NAME,
     USER_NOT_FOUND,
     INVALID_FORMAT,
-    TOO_MANY_KEYS
+    TOO_MANY_KEYS,
+    PERM_DENIED,
+    CHANNEL_NOT_FOUND
 };
 
 /*      FUNCTIONS       */

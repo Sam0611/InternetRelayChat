@@ -88,6 +88,21 @@ bool Channel::isOperator(std::string name)
     return (false);
 }
 
+std::string Channel::getTopic() const
+{
+    return (_topic);
+}
+
+void Channel::setTopic(std::string name, std::string topic)
+{
+    _topic = topic;
+
+    // send message to all members saying topic has changed
+    std::string message = " changed topic to ";
+    message.append(topic);
+    sendMessage(name, message);
+}
+
 bool Channel::getMode(char mode)
 {
     std::map<char, bool>::iterator it = _mode.find(mode);
