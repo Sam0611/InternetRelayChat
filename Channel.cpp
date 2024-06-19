@@ -107,6 +107,7 @@ void Channel::setTopic(std::string name, std::string topic)
     // send message to all members saying topic has changed
     std::string message = " changed topic to ";
     message.append(topic);
+    message.append("\n");
     sendMessage(name, message);
 }
 

@@ -253,11 +253,16 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 		}
 
 		_clients[id]->removeChannel(channelNames[i]);
+		std::string message = "You left the channel ";
+		message.append(channelNames[i]);
+		message.append("\n");
+		send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 		for (size_t j = 0; j < _channels.size(); j++)
 		{
 			if (!channelNames[i].compare(_channels[j]->getName()))
 			{
 				_channels[j]->removeUser(_clients[id]->getName());
+				_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
 				break ;
 			}
 		}
@@ -287,6 +292,7 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
 	{
 		std::string topic = _channels[i]->getName();
 		topic.append(_channels[i]->getTopic());
+		topic.append("\n");
 		send(_clients[id]->getFd(), topic.c_str(), topic.length(), 0);
 		return ;
 	}

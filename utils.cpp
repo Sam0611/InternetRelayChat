@@ -82,7 +82,7 @@ void print_error_message(int e, int fd)
             errorMessage = "Error: channel not found\n";
 			break ;
         default:
-            std::cerr << RED << "No error found" << RESET << std::endl;
+            std::cerr << RED << "error 404" << RESET << std::endl;
             return ;
     }
 
