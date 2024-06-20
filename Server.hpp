@@ -35,6 +35,7 @@ class Server
         void join_channel(std::vector<std::string> msg, int id);
         void leave_channel(std::vector<std::string> msg, int id);
         void view_or_change_topic(std::vector<std::string> msg, int id);
+        void invite_to_channel(std::vector<std::string> msg, int id);
         void kick_from_channel(std::vector<std::string> msg, int id);
         void list_channels(std::vector<std::string> msg, int id);
 

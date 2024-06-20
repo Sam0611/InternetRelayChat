@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <bits/stdc++.h> // std::find
 
 std::vector<std::string> splitString(std::string str, char delimiter)
 {
@@ -51,11 +52,14 @@ int main(int ac, char **av)
 
     std::string str(av[1]);
     std::vector<std::string> vec;
+    std::vector<std::string>::iterator ite;
 
     vec = splitString(str, ' ', ':');
 
     vec.insert(vec.begin(), "coucou");
-    // vec.erase(vec.begin() + 1);
+    ite = std::find(vec.begin(), vec.end(), "Sam");
+    if (ite != vec.end())
+        vec.erase(ite);
 
     for (size_t i = 0; i < vec.size(); i++)
         std::cout << i << " : " << vec[i] << std::endl;

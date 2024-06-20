@@ -221,11 +221,14 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 		{
 			// check mode i/k/l (invite only, need password, limit of user set and reached)
 			// passwords (mdp[1])
+			// check client _invites
 			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
 		}
 
 		// add channel in client class
 		_clients[id]->addChannel(channelNames[i]);
+
+		// remove channel name from client _invites
 	}
 }
 
@@ -377,6 +380,44 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
 	send(_clients[j]->getFd(), message.c_str(), message.length(), 0);
 }
 
+// INVITE acomet #chan
+// There is no requirement that the channel the target user is being invited to must exist or be a valid channel
+void Server::invite_to_channel(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain a username and a channel name)
+	if (msg.size() != 2)
+    {
+        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if user to invite exists
+	size_t j = getClientId(msg[0]);
+	if (j == _clients.size())
+    {
+        print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if channel exists and is invite only mode and sender is not operator
+	size_t i = getChannelId(msg[1]);
+	if (i != _channels.size() && _channels[i]->getMode('i') && !_channels[i]->isOperator(_clients[id]->getName()))
+	{
+        print_error_message(PERM_DENIED, _clients[id]->getFd());
+        return ;
+	}
+
+	// save the invite in the invited client class
+	_clients[j]->saveInvite(msg[1]);
+
+	// send invite message to the invited
+	std::string inviteMessage = " invited you to ";
+	inviteMessage.insert(0, _clients[id]->getName());
+	inviteMessage.append(msg[1]);
+	inviteMessage.append("\n");
+	send(_clients[id]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
+}
+
 // LIST
 void Server::list_channels(std::vector<std::string> msg, int id)
 {
@@ -433,7 +474,7 @@ void Server::process_commands(char *input, int id)
             view_or_change_topic(msg, id);
 			break ;
         case 4: // INVITE
-            std::cout << "invite" << std::endl;
+            invite_to_channel(msg, id);
 			break ;
         case 5: // KICK
             kick_from_channel(msg, id);

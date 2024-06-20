@@ -111,7 +111,7 @@ void Channel::setTopic(std::string name, std::string topic)
     sendMessage(name, message);
 }
 
-bool Channel::getMode(char mode)
+bool Channel::getMode(char mode) // i/t/k/l
 {
     std::map<char, bool>::iterator it = _mode.find(mode);
     if (it != _mode.end())
@@ -129,4 +129,9 @@ void Channel::changeMode(char mode, char change)
         return ;
 
     // change mode
+    // i -> true / false
+    // t -> true / false
+    // k -> true / false + save password
+    // l -> true / false + save limit (limit must be greater than number of members)
+    // o -> true / false + change _operator by adding or removing element
 }

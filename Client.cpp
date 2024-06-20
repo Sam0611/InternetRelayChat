@@ -202,20 +202,37 @@ void Client::addChannel(std::string name)
 
 void Client::removeChannel(std::string name)
 {
-    for (size_t i = 0; i < _channelNames.size(); i++)
-    {
-        if (!_channelNames[i].compare(name))
-        {
-            _channelNames.erase(_channelNames.begin() + i);
-            return ;
-        }
-    }
+    std::vector<std::string>::iterator it;
+
+    it = std::find(_channelNames.begin(), _channelNames.end(), name);
+    if (it != _channelNames.end())
+        _channelNames.erase(it);
 }
 
 bool Client::isInChannel(std::string name)
 {
-    for (size_t i = 0; i < _channelNames.size(); i++)
-        if (!_channelNames[i].compare(name))
-            return (true);
+    std::vector<std::string>::iterator it;
+
+    it = std::find(_channelNames.begin(), _channelNames.end(), name);
+    if (it != _channelNames.end())
+        return (true);
     return (false);
+}
+
+void Client::saveInvite(std::string name)
+{
+    std::vector<std::string>::iterator it;
+
+    it = std::find(_invites.begin(), _invites.end(), name);
+    if (it == _invites.end())
+        _invites.push_back(name);
+}
+
+void Client::removeInvite(std::string name)
+{
+    std::vector<std::string>::iterator it;
+
+    it = std::find(_invites.begin(), _invites.end(), name);
+    if (it != _invites.end())
+        _invites.erase(it);
 }

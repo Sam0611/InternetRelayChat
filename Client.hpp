@@ -30,6 +30,8 @@ class Client
         void addChannel(std::string name);
         void removeChannel(std::string name);
         bool isInChannel(std::string name);
+        void saveInvite(std::string name);
+        void removeInvite(std::string name);
 
     private:
         int         _fd;
@@ -37,6 +39,7 @@ class Client
         std::string _name;
         std::vector<std::string> _username;
         std::vector<std::string> _channelNames;
+        std::vector<std::string> _invites;
         void check_password_input(std::vector<std::string> msg, std::string password);
         void set_nickname(std::vector<std::string> msg);
         void set_usernames(std::vector<std::string> msg);
