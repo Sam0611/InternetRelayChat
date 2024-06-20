@@ -30,6 +30,7 @@ class Client
         void addChannel(std::string name);
         void removeChannel(std::string name);
         bool isInChannel(std::string name);
+        bool hasInvite(std::string name);
         void saveInvite(std::string name);
         void removeInvite(std::string name);
 

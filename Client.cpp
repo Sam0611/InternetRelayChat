@@ -219,12 +219,19 @@ bool Client::isInChannel(std::string name)
     return (false);
 }
 
-void Client::saveInvite(std::string name)
+bool Client::hasInvite(std::string name)
 {
     std::vector<std::string>::iterator it;
 
     it = std::find(_invites.begin(), _invites.end(), name);
-    if (it == _invites.end())
+    if (it != _invites.end())
+        return (true);
+    return (false);
+}
+
+void Client::saveInvite(std::string name)
+{
+    if (!hasInvite(name))
         _invites.push_back(name);
 }
 

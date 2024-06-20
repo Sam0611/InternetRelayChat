@@ -23,6 +23,7 @@ class Channel
         std::map<char, bool> _mode; // char = i, t, k, l
         std::string _password;
         std::string _topic;
+        size_t _limit;
         std::vector<std::string> _operator;
         std::map<std::string, int> _users;
 
@@ -37,6 +38,8 @@ class Channel
         bool isOperator(std::string name);
         std::string getTopic() const;
         void setTopic(std::string name, std::string topic);
+        bool checkPassword(std::string password) const;
+        bool limitReached() const;
         bool getMode(char mode); // mode = i/t/k/o/l
         void changeMode(char mode, char change); // change = +/-
 };

@@ -77,9 +77,9 @@ int main(int ac, char **av)
 
     std::map<std::string, int>::iterator it;
     for (it = _users.begin(); it != _users.end(); it++)
-    {
         std::cout << it->first << " : " << it->second << std::endl;
-    }
+
+    std::cout << "map size = " << _users.size() << std::endl;
 
     std::string message = ":Hello to everybody !!!";
     std::string name = "#chan";

@@ -111,6 +111,20 @@ void Channel::setTopic(std::string name, std::string topic)
     sendMessage(name, message);
 }
 
+bool Channel::checkPassword(std::string password) const
+{
+    if (!password.compare(_password))
+        return (true);
+    return (false);
+}
+
+bool Channel::limitReached() const
+{
+    if (_users.size() < _limit)
+        return (false);
+    return (true);
+}
+
 bool Channel::getMode(char mode) // i/t/k/l
 {
     std::map<char, bool>::iterator it = _mode.find(mode);

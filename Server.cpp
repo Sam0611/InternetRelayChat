@@ -202,33 +202,57 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 	}
 
 	// create and join channels
+	std::string message;
 	for (size_t i = 0; i < channelNames.size(); i++)
 	{
-		// check if channel exists
-		size_t j;
-		for (j = 0; j < _channels.size(); j++)
-			if (!channelNames[i].compare(_channels[j]->getName()))
-				break ;
-		
-		if (j == _channels.size())
+		size_t j = getChannelId(channelNames[i]);
+		if (j == _channels.size()) // channel doesn't exist
 		{
 			// create new channel
 			_channels.push_back(new Channel(channelNames[i], _clients[id]->getName(), _clients[id]->getFd()));
 			
 			// if password, set mode +k with this password
+			// if (i < channelPasswords.size())
+			// _channels[j]->changeMode(+k with this password)
 		}
-		else
+		else // channel already exists
 		{
-			// check mode i/k/l (invite only, need password, limit of user set and reached)
-			// passwords (mdp[1])
-			// check client _invites
+			// check if mode invite only and client does'nt have invite
+			if (_channels[j]->getMode('i') && !_clients[id]->hasInvite(channelNames[i]))
+			{
+				message = "You can't join ";
+				message.append(channelNames[i]);
+				message.append(" : invite only\n");
+				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				continue ;
+			}
+
+			// check if key mode and password is wrong
+			if (_channels[j]->getMode('k') && i >= channelPasswords.size() && !_channels[j]->checkPassword(channelPasswords[i]))
+			{
+				message = "You can't join ";
+				message.append(channelNames[i]);
+				message.append(" : wrong password\n");
+				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				continue ;
+			}
+
+			// check if limit of users set and reached
+			if (_channels[j]->getMode('l') && _channels[j]->limitReached())
+			{
+				message = "You can't join ";
+				message.append(channelNames[i]);
+				message.append(" : limit number of users reached\n");
+				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				continue ;
+			}
+
 			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
 		}
 
-		// add channel in client class
-		_clients[id]->addChannel(channelNames[i]);
+		_clients[id]->addChannel(channelNames[i]); // add channel in client class
+		_clients[id]->removeInvite(channelNames[i]); // remove channel from client invites
 
-		// remove channel name from client _invites
 	}
 }
 
