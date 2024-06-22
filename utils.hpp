@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream> // istringstream
 #include <unistd.h> // close
 #include <stdlib.h> // strtol
 #include <cctype> // isdigit
@@ -35,7 +36,7 @@
 #define ERROR -1
 #define MAX_CONNEXION 100
 #define MAX_CHANNEL 10
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 512
 #define FIRST_CLIENT 2
 
 /*      ENUM            */
@@ -52,7 +53,10 @@ enum err
     INVALID_FORMAT,
     TOO_MANY_KEYS,
     PERM_DENIED,
-    CHANNEL_NOT_FOUND
+    CHANNEL_NOT_FOUND,
+    INVALID_PASSWORD,
+    LIMIT_TOO_SMALL,
+    LIMIT_EXCEEDED
 };
 
 /*      FUNCTIONS       */

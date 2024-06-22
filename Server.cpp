@@ -212,8 +212,8 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			_channels.push_back(new Channel(channelNames[i], _clients[id]->getName(), _clients[id]->getFd()));
 			
 			// if password, set mode +k with this password
-			// if (i < channelPasswords.size())
-			// _channels[j]->changeMode(+k with this password)
+			if (i < channelPasswords.size())
+				_channels[j]->changeMode('+', 'k', channelPasswords[i]);
 		}
 		else // channel already exists
 		{
@@ -338,7 +338,7 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
         print_error_message(PERM_DENIED, _clients[id]->getFd());
 }
 
-// KICK #chan acomet :he is a pain in the ass
+// KICK #chan acomet :he is a bigboss
 void Server::kick_from_channel(std::vector<std::string> msg, int id)
 {
 	// check the buffer size (must contain a channel name and a username, and may have a comment)
@@ -442,6 +442,99 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	send(_clients[id]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
 }
 
+// MODE #chan +i
+void Server::change_mode(std::vector<std::string> msg, int id)
+{
+	// check the buffer size (must contain a channel name, the mode change and may have an optional arg (+k, +l, +o))
+	if (msg.size() != 2 && msg.size() != 3)
+    {
+		print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+		return ;
+    }
+
+	// check if channel exists
+	size_t i = getChannelId(msg[0]);
+	if (i == _channels.size())
+    {
+        print_error_message(CHANNEL_NOT_FOUND, _clients[id]->getFd());
+        return ;
+    }
+
+	// check if client is operator of the channel
+	if (!_channels[i]->isOperator(_clients[id]->getName()))
+    {
+        print_error_message(PERM_DENIED, _clients[id]->getFd());
+        return ;
+    }
+
+	// check mode string size (must be = 2), check sign (+/-) and check mode (i/k/l/o/t)
+	std::string	modes = "iklot";
+	if (msg[1].size() != 2 || (msg[1][0] != '-' && msg[1][0] != '+')
+		|| modes.find(msg[1][1]) == std::string::npos)
+    {
+        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+        return ;
+    }
+
+	if (msg.size() == 2)
+	{
+		// check error number args
+		if (!msg[1].compare("+k") || !msg[1].compare("+o") || !msg[1].compare("+l"))
+		{
+			print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+			return ;
+		}
+
+		if (!msg[1].compare("-o"))
+			_channels[i]->changeMode(msg[1][0], msg[1][1], _clients[id]->getName());
+		else
+			_channels[i]->changeMode(msg[1][0], msg[1][1]);
+		return ;
+	}
+	
+	// msg size = 3
+
+	// check error number args
+	if (msg[1].compare("+k") && msg[1].compare("+o") && msg[1].compare("+l"))
+	{
+		print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+		return ;
+	}
+
+	// convert msg[2] to int when +l mode
+	if (!msg[1].compare("+l"))
+	{
+		size_t len;
+		std::istringstream ss(msg[2]);
+		ss >> len;
+		if (ss.fail() || !ss.eof())
+		{
+			print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+			return ;
+		}
+		_channels[i]->changeMode(msg[1][1], len);
+		return ;
+	}
+
+	// if +k and password contains ',' or ':'
+	if (!msg[1].compare("+k") 
+		&& (msg[2].find(',') != std::string::npos || msg[2].find(':') != std::string::npos))
+	{
+		print_error_message(INVALID_PASSWORD, _clients[id]->getFd());
+		return ;
+	}
+
+	// if +o and user is in the channel
+	if (!msg[1].compare("+o") && !_channels[i]->isMember(msg[2])) 
+	{
+		print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
+		return ;
+	}
+
+	// change mode with +k or +o
+	_channels[i]->changeMode(msg[1][0], msg[1][1], msg[2]);
+}
+
 // LIST
 void Server::list_channels(std::vector<std::string> msg, int id)
 {
@@ -477,7 +570,7 @@ void Server::process_commands(char *input, int id)
     size_t i = 0;
     while (i < 10 && cmd[i].compare(msg[0]))
 	{
-        i++;
+        ++i;
 	}
 
 	// deleting part of msg containing command name
@@ -504,7 +597,7 @@ void Server::process_commands(char *input, int id)
             kick_from_channel(msg, id);
 			break ;
         case 6: // MODE
-            std::cout << "changing mode" << std::endl;
+            change_mode(msg, id);
 			break ;
         case 7: // QUIT
             std::cout << "leaving irc" << std::endl;
@@ -559,7 +652,6 @@ int Server::startServer(void)
 	socklen_t len = sizeof(addrClient);
 
 	// variables for received content
-	// bool msgBeginning = true;
 	std::string input; // stdin
 	char buffer[BUFFER_SIZE]; // clients
 	for (size_t i = 0; i < sizeof(buffer); i++)
@@ -651,6 +743,14 @@ int Server::startServer(void)
 
 			if (!_clients[i - FIRST_CLIENT]->info_set)
 			{
+				//bigboss test
+				std::cerr << "test : " << buffer << std::endl;
+/*    std::vector<std::string> msg = splitString(str, ' ');
+*/
+
+
+
+
 				// process input as command (PASS / NICK / USER)
 				_clients[i - FIRST_CLIENT]->log_in(buffer, _password);
 
@@ -664,43 +764,12 @@ int Server::startServer(void)
 				// process IRC commands
 				process_commands(buffer, i - FIRST_CLIENT);
 			}
-			
-
-			
-
-
-			// if message is \n only, then do nothing
-			// if (msgBeginning && buffer[0] == '\n')
-			// {
-			// 	buffer[0] = 0;
-			// 	continue ;
-			// }
-
-			// put a \0 at the end of message
-			// buffer[msglen] = 0;
-
-			// print message in server side
-			// if (msgBeginning)
-			// {
-			// 	std::cout << "Received : ";
-			// 	msgBeginning = false;
-			// }
-			// std::cout << buffer;
-
-			// print message to all clients
-			// for (int j = FIRST_CLIENT; j < nfds; j++)
-			// 	if (j != i)
-			// 		send(fds[j].fd, buffer, sizeof(buffer), 0);
-
-			// if message ends with \n, the next will be starting
-			// if (buffer[msglen - 1] == '\n')
-			// 	msgBeginning = true;
 
 			for (int j = 0; buffer[j]; j++)
 				buffer[j] = 0;
 		}
 	}
-
+ 
 	// closing fd clients still connected when server ends
 	for (int i = FIRST_CLIENT; i < nfds; i++)
 		if (fds[i].fd > 0)

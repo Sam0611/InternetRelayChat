@@ -133,19 +133,48 @@ bool Channel::getMode(char mode) // i/t/k/l
     return (false);
 }
 
-void Channel::changeMode(char mode, char change)
+// i / t / -k / -l
+void Channel::changeMode(char change, char mode)
 {
-    std::map<char, bool>::iterator it = _mode.find(mode);
-    if (it == _mode.end())
-        return ;
+    if (change == '-')
+        _mode[mode] = false;
+    if (change == '+')
+        _mode[mode] = true;
+}
 
-    if (change != '-' && change != '+')
+// +l
+void Channel::changeMode(char mode, size_t len, int fd)
+{
+    if (len <= 0)
+    {
+        print_error_message(LIMIT_TOO_SMALL, fd);
         return ;
+    }
 
-    // change mode
-    // i -> true / false
-    // t -> true / false
-    // k -> true / false + save password
-    // l -> true / false + save limit (limit must be greater than number of members)
-    // o -> true / false + change _operator by adding or removing element
+    if (len < _users.size())
+    {
+        print_error_message(LIMIT_EXCEEDED, fd);
+        return ;
+    }
+
+    _mode[mode] = true;
+    _limit = len;
+}
+
+// o / +k
+void Channel::changeMode(char change, char mode, std::string str)
+{
+    if (mode == 'k')
+    {
+        _mode[mode] = true;
+        _password = str;
+        return ;
+    }
+
+    // mode = o
+    std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), str);
+    if (change == '-' && it != _operator.end())
+        _operator.erase(it);
+    if (change == '+' && it == _operator.end())
+        _operator.push_back(str);
 }

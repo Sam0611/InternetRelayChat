@@ -41,7 +41,9 @@ class Channel
         bool checkPassword(std::string password) const;
         bool limitReached() const;
         bool getMode(char mode); // mode = i/t/k/o/l
-        void changeMode(char mode, char change); // change = +/-
+        void changeMode(char change, char mode);
+        void changeMode(char mode, size_t len, int fd);
+        void changeMode(char change, char mode, std::string str);
 };
 
 #endif

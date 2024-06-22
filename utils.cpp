@@ -81,6 +81,15 @@ void print_error_message(int e, int fd)
         case CHANNEL_NOT_FOUND:
             errorMessage = "Error: channel not found\n";
 			break ;
+        case INVALID_PASSWORD:
+            errorMessage = "Error: invalid password\n";
+			break ;
+        case LIMIT_TOO_SMALL:
+            errorMessage = "Error: limit is too small\n";
+			break ;
+        case LIMIT_EXCEEDED:
+            errorMessage = "Error: limit must be greater then number of members\n";
+			break ;
         default:
             std::cerr << RED << "error 404" << RESET << std::endl;
             return ;
