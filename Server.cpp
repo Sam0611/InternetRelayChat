@@ -250,6 +250,9 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
 		}
 
+		_channels[j]->joinChannelMessage(_clients[id]->getFd(), _clients[id]->getName()); //messages when first connecting to channel
+		rpl_topic(*_clients[id], *_channels[j]);
+		std::cerr << "testttt = " << _channels[j]->getName();
 		_clients[id]->addChannel(channelNames[i]); // add channel in client class
 		_clients[id]->removeInvite(channelNames[i]); // remove channel from client invites
 
@@ -560,10 +563,9 @@ void Server::list_channels(std::vector<std::string> msg, int id)
 	send(_clients[id]->getFd(), chanList.c_str(), chanList.length(), 0);
 }
 
-void Server::process_commands(char *input, int id)
+void Server::process_commands(std::string input, int id)
 {
 	std::string str(input);
-    str.erase(str.size() - 1); // remove \n at the end
 	std::string cmd[10] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP"};
     std::vector<std::string> msg = splitString(str, ' ', ':');
 
@@ -627,6 +629,7 @@ bool is_available_username(std::vector<Client *> clients, size_t id)
 		}
 	}
 	std::cout << clients[id]->getName() << " is logged" << std::endl;
+	rpl_welcome(*clients[id]);
 	return (true);
 }
 
@@ -741,28 +744,35 @@ int Server::startServer(void)
 				continue ;
 			}
 
-			if (!_clients[i - FIRST_CLIENT]->info_set)
-			{
 				//bigboss test
-				std::cerr << "test : " << buffer << std::endl;
-/*    std::vector<std::string> msg = splitString(str, ' ');
-*/
+			std::cerr << "test : " << buffer << std::endl;
 
+			// seperate multiples commands from one buffer
+			std::vector<std::string> cmds = splitString(buffer, '\n');
 
-
-
-				// process input as command (PASS / NICK / USER)
-				_clients[i - FIRST_CLIENT]->log_in(buffer, _password);
-
-				// if client fullfilled info -> check if username is available
-				if (_clients[i - FIRST_CLIENT]->check_informations())
-					_clients[i - FIRST_CLIENT]->info_set = is_available_username(_clients, i - FIRST_CLIENT);
-			}
-			else
+			// check each cmd in buffer
+			for (size_t k = 0; k < cmds.size(); k++)
 			{
-				std::cout << "Received : " << buffer;
-				// process IRC commands
-				process_commands(buffer, i - FIRST_CLIENT);
+				// std::cerr << "bouuuuuuuuuuuuuuuucle" << std::endl;
+				//removing '\r'
+				if (cmds[k][cmds[k].size() -1] == '\r')
+					cmds[k].erase(cmds[k].size() - 1); // remove \n at the end
+
+				if (!_clients[i - FIRST_CLIENT]->info_set)
+				{
+					// process input as command (PASS / NICK / USER)
+					_clients[i - FIRST_CLIENT]->log_in(cmds[k], _password);
+
+					// if client fullfilled info -> check if username is available
+					if (_clients[i - FIRST_CLIENT]->check_informations())
+						_clients[i - FIRST_CLIENT]->info_set = is_available_username(_clients, i - FIRST_CLIENT);
+				}
+				else
+				{
+					std::cout << "Received : " << buffer;
+					// process IRC commands
+					process_commands(cmds[k].c_str(), i - FIRST_CLIENT);
+				}
 			}
 
 			for (int j = 0; buffer[j]; j++)

@@ -21,7 +21,7 @@ class Client
         Client();
         Client(int fd);
         ~Client();
-        void log_in(char *input, const std::string password);
+        void log_in(std::string input, const std::string password);
         bool info_set;
         bool check_informations();
         int getFd() const;

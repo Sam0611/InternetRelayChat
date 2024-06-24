@@ -16,6 +16,7 @@
 #include "utils.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "NumericReply.hpp"
 
 class Server
 {
@@ -30,7 +31,7 @@ class Server
         int getFdByName(const std::string name);
         size_t getClientId(const std::string name);
         size_t getChannelId(const std::string name);
-        void process_commands(char *input, int id);
+        void process_commands(std::string input, int id);
         void send_private_message(std::vector<std::string> msg, int id);
         void join_channel(std::vector<std::string> msg, int id);
         void leave_channel(std::vector<std::string> msg, int id);

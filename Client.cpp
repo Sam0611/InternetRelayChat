@@ -39,7 +39,10 @@ void Client::check_password_input(std::vector<std::string> msg, std::string pass
     }
 
     if (!msg[1].compare(password))
+    {
         _pass = true;
+        std::cerr << "password entered" << std::endl; // bigboss test a suppr
+    }
     else
         print_error_message(WRONG_PASSWORD, _fd);
 }
@@ -68,6 +71,7 @@ void Client::set_nickname(std::vector<std::string> msg)
     }
 
     _name = msg[1];
+    std::cerr << "nickname entered" << std::endl; // bigboss test a suppr
 }
 
 void Client::set_usernames(std::vector<std::string> msg)
@@ -110,13 +114,13 @@ void Client::set_usernames(std::vector<std::string> msg)
 
     for (size_t i = 1; i < msg.size(); i++)
         _username.push_back(msg[i]);
+    std::cerr << "username entered" << std::endl; // bigboss test a suppr
 }
 
 // PASS / NICK / USER
-void Client::log_in(char *input, const std::string password)
+void Client::log_in(std::string input, const std::string password)
 {
 	std::string str(input);
-    str.erase(str.size() - 1); // remove \n at the end
     std::string cmd[3] = {"PASS", "NICK", "USER"};
     std::vector<std::string> msg = splitString(str, ' ');
 

@@ -87,6 +87,45 @@ void Channel::sendMessage(std::string name, std::string message)
     }
 }
 
+void Channel::joinChannelMessage(int fd, std::string name)
+{
+    //entered message
+    std::string message = " joined ";
+    message.append(_name);
+    message.push_back('\n');
+    message.insert(0, _name.substr(1));
+    message.insert(0, "@");
+    message.insert(0, name);
+    send(fd, message.c_str(), message.length(), 0);
+
+    //topic message
+    // rpl_topic(client, getTopic(), getName());
+    // {
+
+    //     message = _name;
+    //     message.append(" :");
+    //     message.append(getTopic());
+    //     message.push_back('\n');
+    //     send(client.getFd(), message.c_str(), message.length(), 0);
+    // }
+
+    //members message
+    message = _name;
+    message.append(" :");
+    for (std::map<std::string, int>::iterator it = _users.begin(); it != _users.end(); it++)
+    {
+        if (isOperator(it->first))
+            message.append("@");
+        message.append(it->first);
+        message.append(" ");
+    }
+    message.push_back('\n');
+    send(fd, message.c_str(), message.length(), 0);
+    message = _name;
+    message.append(" : End of /NAMES list\n");
+    send(fd, message.c_str(), message.length(), 0);
+}
+
 bool Channel::isOperator(std::string name)
 {
     for (size_t i = 0; i < _operator.size(); i++)

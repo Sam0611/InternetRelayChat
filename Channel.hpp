@@ -35,6 +35,7 @@ class Channel
         void addUser(std::string name, int fd);
         void removeUser(std::string name);
         void sendMessage(std::string name, std::string message);
+        void joinChannelMessage(int fd, std::string name);
         bool isOperator(std::string name);
         std::string getTopic() const;
         void setTopic(std::string name, std::string topic);

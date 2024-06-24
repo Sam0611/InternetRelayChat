@@ -38,6 +38,8 @@
 #define MAX_CHANNEL 10
 #define BUFFER_SIZE 512
 #define FIRST_CLIENT 2
+#define NETWORK "スマブラチム"
+#define SERVER "127.0.0.1"
 
 /*      ENUM            */
 
