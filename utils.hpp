@@ -38,8 +38,7 @@
 #define MAX_CHANNEL 10
 #define BUFFER_SIZE 512
 #define FIRST_CLIENT 2
-#define NETWORK "スマブラチム"
-#define SERVER "127.0.0.1"
+#define SERVER "スマブラチム"
 
 /*      ENUM            */
 
@@ -65,7 +64,10 @@ enum err
     CHANNEL_NOT_FOUND,
     INVALID_PASSWORD,
     LIMIT_TOO_SMALL,
-    LIMIT_EXCEEDED
+    LIMIT_EXCEEDED,
+    NOT_IN_THE_CHANEL,
+    NO_SUCH_NICK,
+    CHANNEL_PASSWORD_INCORRECT
 };
 
 /*      FUNCTIONS       */

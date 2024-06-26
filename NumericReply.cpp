@@ -3,8 +3,6 @@
 void    rpl_welcome(Client client)
 {
     //Welcome new user
-    //model : ":server 001 <nick> :Welcome to the <network> Network, <nick>[!<user>@<host>]"
-    //ex : ":irc.example.com 001 dan :Welcome to the IRCcom Network, dan"
     std::string message;
 
     message = ":";
@@ -14,7 +12,7 @@ void    rpl_welcome(Client client)
     message.append(" ");
     message.append(client.getName());
     message.append(" :Welcome to the ");
-    message.append(NETWORK);
+    message.append(SERVER);
     message.append(", ");
     message.append(client.getName());
     message.append("\r\n");
@@ -91,7 +89,7 @@ void    rpl_endofnames(Client client, Channel channel)
     send(client.getFd(), message.c_str(), message.length(), 0);
 }
 
-void    err_NEEDMOREPARAMS(int fd, std::string command)
+void    err_needmoreparams(int fd, std::string command)
 {
     std::string message = " ";
     message.append(SERVER);

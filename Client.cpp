@@ -40,15 +40,10 @@ void Client::check_password_input(std::string input, std::string password)
         return ;
     }
 
-    // if (msg.size() > 2)
-    // {
-    //     print_error_message(WRONG_ARG_NUMBER, _fd);
-    //     return ;
-    // }
-
     if (!msg[msg.size() -1].compare(password))
     {
         pass_set = true;
+        
         std::cerr << "password entered" << std::endl; // bigboss test a suppr
     }
     else

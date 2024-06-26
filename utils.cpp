@@ -112,6 +112,15 @@ void print_error_message(int e, int fd)
         case LIMIT_EXCEEDED:
             errorMessage.append(" :limit must be greater then number of members\r\n");
 			break ;
+        case NOT_IN_THE_CHANEL:
+            errorMessage.append(" :not in the chanel\r\n");
+			break ;
+        case NO_SUCH_NICK:
+            errorMessage.append(" :no such nick/channel\r\n");
+			break ;
+        case CHANNEL_PASSWORD_INCORRECT:
+            errorMessage.append(" :incorrect channel password\r\n");
+			break ;
         default:
             std::cerr << RED << " :error 404" << RESET << std::endl;
             return ;

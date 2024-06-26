@@ -141,6 +141,7 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			if (destfd == ERROR) // if username not found
 			{
 				std::cerr << RED << "'" << receivers[i] << "' not found" << RESET << std::endl;
+				print_error_message(NO_SUCH_NICK, _clients[id]->getFd());
 				continue ;
 			}
 
@@ -227,12 +228,13 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			}
 
 			// check if key mode and password is wrong
-			if (_channels[j]->getMode('k') && i >= channelPasswords.size() && !_channels[j]->checkPassword(channelPasswords[i]))
+			if (_channels[j]->getMode('k') && (i >= channelPasswords.size() || !_channels[j]->checkPassword(channelPasswords[i])))
 			{
-				message = "You can't join ";
-				message.append(channelNames[i]);
-				message.append(" : wrong password\n");
-				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				print_error_message(CHANNEL_PASSWORD_INCORRECT, _clients[i]->getFd());
+				// message = "You can't join ";
+				// message.append(channelNames[i]);
+				// message.append(" : wrong password\n");
+				// send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 				continue ;
 			}
 
@@ -264,9 +266,9 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 void Server::leave_channel(std::vector<std::string> msg, int id)
 {
 	// check the buffer size (must contain channel names)
-	if (msg.size() != 1)
+	if (msg.size() < 1 || (msg.size() > 1 && msg[1][0] != ':'))
     {
-        print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
         return ;
     }
 
@@ -277,16 +279,21 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 	{
 		if (!_clients[id]->isInChannel(channelNames[i]))
 		{
-			errorMessage = ": not in that channel\n";
-			errorMessage.insert(0, channelNames[i]);
-			send(_clients[id]->getFd(), errorMessage.c_str(), errorMessage.length(), 0);
+			print_error_message(NOT_IN_THE_CHANEL, _clients[id]->getFd());
 			continue ;
 		}
 
 		_clients[id]->removeChannel(channelNames[i]);
-		std::string message = "You left the channel ";
+		std::string message = ":";
+		message.append(_clients[id]->getName());
+		message.append(" PART ");
 		message.append(channelNames[i]);
-		message.append("\n");
+		if (msg.size() == 2 && !msg[1].empty())
+		{
+			message.append(" ");
+			message.append(msg[1]);
+		}
+		message.append("\r\n");
 		send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 		for (size_t j = 0; j < _channels.size(); j++)
 		{
@@ -449,6 +456,10 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 // MODE #chan +i
 void Server::change_mode(std::vector<std::string> msg, int id)
 {
+	// silently ignore no arg
+	if (msg.size() == 1)
+		return ;
+
 	// check the buffer size (must contain a channel name, the mode change and may have an optional arg (+k, +l, +o))
 	if (msg.size() != 2 && msg.size() != 3)
     {
@@ -567,7 +578,7 @@ void Server::list_channels(std::vector<std::string> msg, int id)
 void Server::process_commands(std::string input, int id)
 {
 	std::string str(input);
-	std::string cmd[10] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP"};
+	std::string cmd[11] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP", "WHO"};
     std::vector<std::string> msg = splitString(str, ' ', ':');
 
     size_t i = 0;
@@ -611,34 +622,15 @@ void Server::process_commands(std::string input, int id)
         case 9: // HELP
             std::cout << "help" << std::endl;
 			break ;
+        case 10: // WHO silenced
+			break ;
         default:
             print_error_message(COMMAND_NOT_FOUND, _clients[id]->getFd());
     }
 }
 
-// bool is_available_username(std::vector<Client *> clients, size_t id)
-// {
-// 	for (size_t i = 0; i < clients.size(); i++)
-// 	{
-// 		if (id == i || !clients[i]->info_set)
-// 			continue ;
-// 		clients[id]->compareNames(clients[i]->getName());
-// 		if (clients[id]->getName().empty())
-// 		{
-// 			print_error_message(USERNAME_NOT_AVAILABLE, clients[id]->getFd());
-// 			return (false);
-// 		}
-// 	}
-// 	std::cout << clients[id]->getName() << " is logged" << std::endl;
-// 	rpl_welcome(*clients[id]);
-// 	return (true);
-// }
-
 int Server::startServer(void)
 {
-	// check if POLLOUT is a relevant good events arg [to do]
-	// protect the max connexion number [to do]
-
 	// set poll variables
 	struct pollfd fds[MAX_CONNEXION];
 	for (int i = 0; i < MAX_CONNEXION; i++)
@@ -763,7 +755,11 @@ int Server::startServer(void)
 				if (!_clients[i - FIRST_CLIENT]->pass_set)// process PASS
 					_clients[i - FIRST_CLIENT]->check_password_input(cmds[k], _password);
 				else if (!_clients[i - FIRST_CLIENT]->nick_set || !_clients[i -FIRST_CLIENT]->user_set) // process NICK / USER
+				{
 					_clients[i - FIRST_CLIENT]->identifying(cmds[k], _clients);
+					if (_clients[i - FIRST_CLIENT]->nick_set && _clients[i - FIRST_CLIENT]->user_set)
+						rpl_welcome(*_clients[i - FIRST_CLIENT]);
+				}
 				else
 				{
 					std::cout << "Received : " << buffer;
