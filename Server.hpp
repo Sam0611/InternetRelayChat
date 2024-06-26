@@ -23,6 +23,8 @@ class Server
     private:
         Server();
         std::string             _host;
+        struct pollfd           _fds[MAX_CONNEXION];
+        int                     _nfds;
         const std::string       _password;
         long                    _port;
         int                     _socket;
@@ -40,6 +42,7 @@ class Server
         void kick_from_channel(std::vector<std::string> msg, int id);
         void change_mode(std::vector<std::string> msg, int id);
         void list_channels(std::vector<std::string> msg, int id);
+        void quit(std::string msg, int id);
 
     public:
         Server(std::string password);

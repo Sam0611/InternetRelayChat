@@ -49,8 +49,8 @@ int Server::createServer(char *input)
 	}
 
 	sockaddr_in addr;
-	// addr.sin_addr.s_addr = INADDR_ANY; // any IPv4 local host address
-    addr.sin_addr.s_addr = inet_addr(_host.c_str());
+	addr.sin_addr.s_addr = INADDR_ANY; // any IPv4 local host address
+    // addr.sin_addr.s_addr = inet_addr(_host.c_str());
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(_port);
 
@@ -255,7 +255,6 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 		rpl_topic(*_clients[id], *_channels[j]);
 		rpl_namereply(*_clients[id], *_channels[j]);
 		rpl_endofnames(*_clients[id], *_channels[j]);
-		std::cerr << "testttt = " << _channels[j]->getName();
 		_clients[id]->addChannel(channelNames[i]); // add channel in client class
 		_clients[id]->removeInvite(channelNames[i]); // remove channel from client invites
 
@@ -404,7 +403,7 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
 	// send message to channel members
 	std::string message = " has been kicked from channel";
 	message.append(reason);
-	message.append("\n");
+	message.append("\r\n");
 	_channels[i]->sendMessage(_clients[j]->getName(), message);
 
 	// send private message to kicked user
@@ -446,11 +445,14 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	_clients[j]->saveInvite(msg[1]);
 
 	// send invite message to the invited
-	std::string inviteMessage = " invited you to ";
-	inviteMessage.insert(0, _clients[id]->getName());
+	std::string inviteMessage = ":";
+	inviteMessage.append(_clients[id]->getName());
+	inviteMessage.append(" INVITE ");
+	inviteMessage.append(msg[0]);
+	inviteMessage.append(" :");
 	inviteMessage.append(msg[1]);
-	inviteMessage.append("\n");
-	send(_clients[id]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
+	inviteMessage.append("\r\r\n");
+	send(_clients[j]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
 }
 
 // MODE #chan +i
@@ -570,15 +572,34 @@ void Server::list_channels(std::vector<std::string> msg, int id)
 	{
 		chanList.append(_channels[i]->getName());
 		chanList.append(_channels[i]->getTopic());
-		chanList.append("\n");
+		chanList.append("\r\n");
 	}
 	send(_clients[id]->getFd(), chanList.c_str(), chanList.length(), 0);
+}
+
+// QUIT <quit message>
+void Server::quit(std::string msg, int id)
+{
+    if (!msg.empty())
+        std::cout << "disconnexion :" << msg << std::endl;
+    else
+        std::cout << "disconnected" << std::endl;
+
+    _nfds--;
+    close(_fds[id + FIRST_CLIENT].fd);
+    if (id + FIRST_CLIENT != _nfds)
+        _fds[id + FIRST_CLIENT].fd = _fds[_nfds].fd;
+    _fds[_nfds].fd = 0;
+    _fds[id + FIRST_CLIENT].revents = 0;
+    
+    delete _clients[id];
+    _clients.erase(_clients.begin() + (id));
 }
 
 void Server::process_commands(std::string input, int id)
 {
 	std::string str(input);
-	std::string cmd[11] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "HELP", "WHO"};
+	std::string cmd[11] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "WHO"};
     std::vector<std::string> msg = splitString(str, ' ', ':');
 
     size_t i = 0;
@@ -614,15 +635,12 @@ void Server::process_commands(std::string input, int id)
             change_mode(msg, id);
 			break ;
         case 7: // QUIT
-            std::cout << "leaving irc" << std::endl;
+            quit(msg[0], id);
 			break ;
         case 8: // LIST
             list_channels(msg, id);
 			break ;
-        case 9: // HELP
-            std::cout << "help" << std::endl;
-			break ;
-        case 10: // WHO silenced
+        case 9: // WHO silenced
 			break ;
         default:
             print_error_message(COMMAND_NOT_FOUND, _clients[id]->getFd());
@@ -632,15 +650,14 @@ void Server::process_commands(std::string input, int id)
 int Server::startServer(void)
 {
 	// set poll variables
-	struct pollfd fds[MAX_CONNEXION];
 	for (int i = 0; i < MAX_CONNEXION; i++)
 	{
-		fds[i].events = POLLIN;
-		fds[i].revents = 0;
+		_fds[i].events = POLLIN;
+		_fds[i].revents = 0;
 	}
-	fds[0].fd = 0;
-	fds[1].fd = _socket;
-	int nfds = 2;
+	_fds[0].fd = 0;
+	_fds[1].fd = _socket;
+	_nfds = 2;
 
 	// initialize client
 	int fdClient = -1;
@@ -655,14 +672,14 @@ int Server::startServer(void)
 
 	while (1)
 	{
-		if (poll(fds, nfds, 0) == ERROR)
+		if (poll(_fds, _nfds, 0) == ERROR)
 		{
 			std::cerr << RED << "Error: poll failed" << RESET << std::endl;
 			return (1);
 		}
 
 		// stdin
-		if (fds[0].revents != 0)
+		if (_fds[0].revents != 0)
 		{
 			std::cin >> input;
             if (input == "exit")
@@ -670,7 +687,7 @@ int Server::startServer(void)
 		}
 
 		// server socket
-		if (fds[1].revents != 0)
+		if (_fds[1].revents != 0)
 		{
 			// receiving new connection
 			fdClient = accept(_socket, (sockaddr*)&addrClient, &len);
@@ -681,7 +698,7 @@ int Server::startServer(void)
 			}
 
 			// check if number of max connection has been reached
-			if (nfds == MAX_CONNEXION)
+			if (_nfds == MAX_CONNEXION)
 			{
 				std::cerr << RED << "Error: number of max connection reached" << RESET << std::endl;
 				close(fdClient);
@@ -692,32 +709,21 @@ int Server::startServer(void)
 			// add new client
 			std::cout << "New connection" << std::endl;
 			_clients.push_back(new Client(fdClient));
-			fds[nfds].fd = fdClient;
-			nfds++;
+			_fds[_nfds].fd = fdClient;
+			_nfds++;
 		}
 
 		// client sockets
-		for (int i = FIRST_CLIENT; i < nfds; i++)
+		for (int i = FIRST_CLIENT; i < _nfds; i++)
 		{
-			if (fds[i].revents == 0)
+			if (_fds[i].revents == 0)
 				continue ;
 
-			if (fds[i].revents != POLLIN)
-			{
-				std::cout << "connection closed" << std::endl;
-				nfds--;
-				close(fds[i].fd);
-				if (i != nfds)
-					fds[i].fd = fds[nfds].fd;
-				fds[nfds].fd = 0;
-				fds[i].revents = 0;
-				delete _clients[i - FIRST_CLIENT];
-				_clients.erase(_clients.begin() + (i - FIRST_CLIENT));
-				continue ;
-			}
+			if (_fds[i].revents != POLLIN)
+                quit(NULL, i - FIRST_CLIENT);
 			
-			//test bigboss pour tronc
-			int msglen = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+			//test bigboss pour trunc
+			int msglen = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
 			std::cerr << "msglen = " << msglen << std::endl;
 			if (msglen == ERROR)
 			{
@@ -726,18 +732,7 @@ int Server::startServer(void)
 			}
 
 			if (!buffer[0]) // ctrl+C
-			{
-				std::cout << "connection closed by ctrl+C" << std::endl;
-				nfds--;
-				close(fds[i].fd);
-				if (i != nfds)
-					fds[i].fd = fds[nfds].fd;
-				fds[nfds].fd = 0;
-				fds[i].revents = 0;
-				delete _clients[i - FIRST_CLIENT];
-				_clients.erase(_clients.begin() + (i - FIRST_CLIENT));
-				continue ;
-			}
+                quit(NULL, i - FIRST_CLIENT);
 
 				//bigboss test
 			std::cerr << "test : " << buffer << std::endl;
@@ -774,9 +769,9 @@ int Server::startServer(void)
 	}
  
 	// closing fd clients still connected when server ends
-	for (int i = FIRST_CLIENT; i < nfds; i++)
-		if (fds[i].fd > 0)
-			close(fds[i].fd);
+	for (int i = FIRST_CLIENT; i < _nfds; i++)
+		if (_fds[i].fd > 0)
+			close(_fds[i].fd);
 
 	return (0);
 }
