@@ -12,11 +12,11 @@
 
 #include "Client.hpp"
 
-Client::Client() : info_set(false), _fd(-1), _pass(false)
+Client::Client() : pass_set(false), nick_set(false), user_set(false), _fd(-1)
 {
 }
 
-Client::Client(int fd) : info_set(false), _fd(fd), _pass(false)
+Client::Client(int fd) : pass_set(false), nick_set(false), user_set(false), _fd(fd)
 {
 }
 
@@ -24,53 +24,74 @@ Client::~Client()
 {
 }
 
-void Client::check_password_input(std::vector<std::string> msg, std::string password)
+void Client::check_password_input(std::string input, std::string password)
 {
-    if (_pass)
+    std::vector<std::string> msg = splitString(input, ' ');
+
+    if (msg[0].compare("PASS"))
     {
-        print_error_message(PARAMETER_ALREADY_SET, _fd);
+        print_error_message(PASSWORD_MISSMATCH, _fd);
+        return;
+    }
+
+    if (msg.size() < 2)
+    {
+        print_error_message(NEED_MORE_PARAM, _fd);
         return ;
     }
 
-    if (msg.size() != 2)
-    {
-        print_error_message(WRONG_ARG_NUMBER, _fd);
-        return ;
-    }
+    // if (msg.size() > 2)
+    // {
+    //     print_error_message(WRONG_ARG_NUMBER, _fd);
+    //     return ;
+    // }
 
-    if (!msg[1].compare(password))
+    if (!msg[msg.size() -1].compare(password))
     {
-        _pass = true;
+        pass_set = true;
         std::cerr << "password entered" << std::endl; // bigboss test a suppr
     }
     else
-        print_error_message(WRONG_PASSWORD, _fd);
+        print_error_message(PASSWORD_MISSMATCH, _fd);
 }
 
-void Client::set_nickname(std::vector<std::string> msg)
+void Client::set_nickname(std::vector<std::string> msg, std::vector<Client *> clients)
 {
-    if (!_name.empty())
+    if (msg.size() < 2)
     {
-        print_error_message(PARAMETER_ALREADY_SET, _fd);
+        print_error_message(NO_NICKNAME_GIVEN, _fd);
         return ;
     }
 
-    if (msg.size() != 2)
+    if (msg.size() > 2)
     {
         print_error_message(WRONG_ARG_NUMBER, _fd);
         return ;
     }
 
-    for (size_t i = 0; i < _username.size(); i++)
+    if (msg[1] == _name)
     {
-        if (!msg[1].compare(_username[i]))
+        print_error_message(NICKNAME_ALREADY_SET, _fd);
+        return ;
+    }
+
+    if (msg[1].find_first_of(",#$@:") != std::string::npos)
+    {
+        print_error_message(NICKNAME_FORBIDDEN, _fd);
+        return ;
+    }
+
+    for (size_t i = 0; i < clients.size(); i++)
+    {
+        if (!msg[1].compare(clients[i]->_name))
         {
-            std::cerr << RED << "Error: usernames must be different" << RESET << std::endl;
+            print_error_message(NICKNAME_ALREADY_USE, _fd);
             return ;
         }
     }
 
     _name = msg[1];
+    nick_set = true;
     std::cerr << "nickname entered" << std::endl; // bigboss test a suppr
 }
 
@@ -88,69 +109,33 @@ void Client::set_usernames(std::vector<std::string> msg)
         return ;
     }
 
-    if (!_name.empty())
-    {
-        for (size_t i = 1; i < msg.size(); i++)
-        {
-            if (!msg[i].compare(_name))
-            {
-                std::cerr << RED << "Error: usernames must be different" << RESET << std::endl;
-                return ;
-            }
-        }
-    }
-
-    for (size_t i = 1; i < msg.size(); i++)
-    {
-        for (size_t j = i + 1; j < msg.size(); j++)
-        {
-            if (!msg[i].compare(msg[j]))
-            {
-                std::cerr << RED << "Error: usernames must be different" << RESET << std::endl;
-                return ;
-            }
-        }
-    }
-
     for (size_t i = 1; i < msg.size(); i++)
         _username.push_back(msg[i]);
+    user_set = true;
     std::cerr << "username entered" << std::endl; // bigboss test a suppr
 }
 
 // PASS / NICK / USER
-void Client::log_in(std::string input, const std::string password)
+void Client::identifying(std::string input, std::vector<Client *> clients)
 {
-	std::string str(input);
-    std::string cmd[3] = {"PASS", "NICK", "USER"};
-    std::vector<std::string> msg = splitString(str, ' ');
+    std::string cmd[3] = {"NICK", "USER"};
+    std::vector<std::string> msg = splitString(input, ' ');
 
     size_t i = 0;
-    while (i < 3 && cmd[i].compare(msg[0]))
+    while (i < 2 && cmd[i].compare(msg[0]))
         i++;
 
     switch(i)
     {
-        case 0: // PASS
-            check_password_input(msg, password);
+        case 0: // NICK
+            set_nickname(msg, clients);
 			break ;
-        case 1: // NICK
-            set_nickname(msg);
-			break ;
-        case 2: // USER
+        case 1: // USER
             set_usernames(msg);
 			break ;
         default:
             print_error_message(COMMAND_NOT_FOUND, _fd);
     }
-}
-
-bool Client::check_informations()
-{
-    if (!_pass || _name.empty() || _username.size() != 4)
-        info_set = false;
-    else
-        info_set = true;
-    return (info_set);
 }
 
 int Client::getFd() const

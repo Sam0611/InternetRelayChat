@@ -17,7 +17,7 @@ void    rpl_welcome(Client client)
     message.append(NETWORK);
     message.append(", ");
     message.append(client.getName());
-    message.append("\n");
+    message.append("\r\n");
     send(client.getFd(), message.c_str(), message.length(), 0);
 }
 
@@ -26,6 +26,7 @@ void    rpl_topic(Client client, Channel channel)
     //display Topic
     std::string message;
 
+    message = ":";
     message.append(SERVER);
     message.append(" ");
     if (channel.getTopic().empty())
@@ -44,4 +45,73 @@ void    rpl_topic(Client client, Channel channel)
         message.append(channel.getTopic());
     message.push_back('\n');
     send(client.getFd(), message.c_str(), message.length(), 0);
+}
+
+void    rpl_namereply(Client client, Channel channel)
+{
+    //members message
+    //S <-   :irc.example.com 353 dan = #test :@dan
+    //S <-   :irc.example.com 366 dan #test :End of /NAMES list.
+    std::string message;
+
+    message = ":";
+    message.append(SERVER);
+    message.append(" ");
+    message.append(RPL_NAMREPLY);
+    message.append(" ");
+    message.append(client.getName());
+    message.append(" = ");
+    message.append(channel.getName());
+    message.append(" :");
+
+    for (std::map<std::string, int>::iterator it = channel.getUsersbegin(); it != channel.getUsersend(); it++)
+    {
+        if (channel.isOperator(it->first))
+            message.append("@");
+        message.append(it->first);
+        message.append(" ");
+    }
+    message.push_back('\n');
+    send(client.getFd(), message.c_str(), message.length(), 0);
+}
+
+void    rpl_endofnames(Client client, Channel channel)
+{
+    std::string message;
+
+    message = ":";
+    message.append(SERVER);
+    message.append(" ");
+    message.append(RPL_ENDOFNAMES);
+    message.append(" ");
+    message.append(client.getName());
+    message.append(" ");
+    message.append(channel.getName());
+    message.append(" : End of /NAMES list\n");
+    send(client.getFd(), message.c_str(), message.length(), 0);
+}
+
+void    err_NEEDMOREPARAMS(int fd, std::string command)
+{
+    std::string message = " ";
+    message.append(SERVER);
+    message.append(" ");
+    message.append(ERR_NEEDMOREPARAMS);
+    if (!command.empty())
+    {
+        message.append(" ");
+        message.append(command);
+    }
+    message.append(" :Password Incorrect\r\n");
+    send(fd, message.c_str(), message.length(), 0);
+}
+
+void    err_passwdmismatch(int fd)
+{
+    std::string message = " ";
+    message.append(SERVER);
+    message.append(" ");
+    message.append(ERR_PASSWDMISMATCH);
+    message.append(" :Password Incorrect\r\n");
+    send(fd, message.c_str(), message.length(), 0);
 }

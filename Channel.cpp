@@ -53,12 +53,20 @@ void Channel::addUser(std::string name, int fd)
     // add user to channel
     _users.insert(std::pair<std::string, int>(name, fd));
 
-    // send join message to server and everyone in the channel
-    std::cout << name << " joined " << _name << std::endl;
-    std::string message = " joined ";
+    // format join notif message
+    std::string message = ":";
+    message.append(name);
+    message.append(" JOIN ");
     message.append(_name);
-    message.push_back('\n');
-    sendMessage(name, message);
+    message.append("\r\n");
+
+    // send join message to server and everyone in the channel
+    std::cout << ":" << name << " JOIN " << _name << std::endl;
+    std::map<std::string, int>::iterator it;
+    for (it = _users.begin(); it != _users.end(); it++)
+    {
+        send(it->second, message.c_str(), message.length(), 0);
+    }
 }
 
 void Channel::removeUser(std::string name)
@@ -68,12 +76,15 @@ void Channel::removeUser(std::string name)
         _users.erase(name);
 }
 
-void Channel::sendMessage(std::string name, std::string message)
+void Channel::sendMessage(std::string name, std::string content)
 {
-    // insert sender's and channel's name at the beginning of message
-    message.insert(0, _name.substr(1));
-    message.insert(0, "@");
-    message.insert(0, name);
+    //format message channel
+    std::string message = ":";
+    message.append(name);
+    message.append(" PRIVMSG ");
+    message.append(_name);
+    message.append(" ");
+    message.append(content);
 
     // send the message to every users in the channel
     std::map<std::string, int>::iterator it;
@@ -90,39 +101,11 @@ void Channel::sendMessage(std::string name, std::string message)
 void Channel::joinChannelMessage(int fd, std::string name)
 {
     //entered message
-    std::string message = " joined ";
+    std::string message = ":";
+    message.append(name);
+    message.append(" JOIN ");
     message.append(_name);
-    message.push_back('\n');
-    message.insert(0, _name.substr(1));
-    message.insert(0, "@");
-    message.insert(0, name);
-    send(fd, message.c_str(), message.length(), 0);
-
-    //topic message
-    // rpl_topic(client, getTopic(), getName());
-    // {
-
-    //     message = _name;
-    //     message.append(" :");
-    //     message.append(getTopic());
-    //     message.push_back('\n');
-    //     send(client.getFd(), message.c_str(), message.length(), 0);
-    // }
-
-    //members message
-    message = _name;
-    message.append(" :");
-    for (std::map<std::string, int>::iterator it = _users.begin(); it != _users.end(); it++)
-    {
-        if (isOperator(it->first))
-            message.append("@");
-        message.append(it->first);
-        message.append(" ");
-    }
-    message.push_back('\n');
-    send(fd, message.c_str(), message.length(), 0);
-    message = _name;
-    message.append(" : End of /NAMES list\n");
+    message.append("\r\n");
     send(fd, message.c_str(), message.length(), 0);
 }
 
@@ -216,4 +199,14 @@ void Channel::changeMode(char change, char mode, std::string str)
         _operator.erase(it);
     if (change == '+' && it == _operator.end())
         _operator.push_back(str);
+}
+
+std::map<std::string, int>::iterator    Channel::getUsersbegin(void)
+{
+    return (_users.begin());
+}
+
+std::map<std::string, int>::iterator    Channel::getUsersend(void)
+{
+    return (_users.end());
 }

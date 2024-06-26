@@ -15,14 +15,18 @@
 
 #include "utils.hpp"
 
+class Server;
+
 class Client
 {
     public:
         Client();
         Client(int fd);
         ~Client();
-        void log_in(std::string input, const std::string password);
-        bool info_set;
+        void identifying(std::string input, std::vector<Client *> clients);
+        bool pass_set;
+        bool nick_set;
+        bool user_set;
         bool check_informations();
         int getFd() const;
         std::string getName() const;
@@ -33,17 +37,16 @@ class Client
         bool hasInvite(std::string name);
         void saveInvite(std::string name);
         void removeInvite(std::string name);
+        void check_password_input(std::string input, std::string password);
+        void set_nickname(std::vector<std::string> msg, std::vector<Client *> clients);
+        void set_usernames(std::vector<std::string> msg);
 
     private:
         int         _fd;
-        bool        _pass;
         std::string _name;
         std::vector<std::string> _username;
         std::vector<std::string> _channelNames;
         std::vector<std::string> _invites;
-        void check_password_input(std::vector<std::string> msg, std::string password);
-        void set_nickname(std::vector<std::string> msg);
-        void set_usernames(std::vector<std::string> msg);
 };
 
 #endif

@@ -34,7 +34,7 @@ class Channel
         bool isMember(std::string name);
         void addUser(std::string name, int fd);
         void removeUser(std::string name);
-        void sendMessage(std::string name, std::string message);
+        void sendMessage(std::string name, std::string content);
         void joinChannelMessage(int fd, std::string name);
         bool isOperator(std::string name);
         std::string getTopic() const;
@@ -45,6 +45,8 @@ class Channel
         void changeMode(char change, char mode);
         void changeMode(char mode, size_t len, int fd);
         void changeMode(char change, char mode, std::string str);
+        std::map<std::string, int>::iterator getUsersbegin(void);
+        std::map<std::string, int>::iterator getUsersend(void);
 };
 
 #endif

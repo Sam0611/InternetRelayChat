@@ -117,8 +117,7 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 	// get receivers separated by commas
 	std::vector<std::string> receivers = splitString(msg[0], ',');
 
-	std::string msgContent;
-	msg[1].push_back('\n');
+	msg[1].append("\r\n");
 	for (size_t i = 0; i < receivers.size(); i++) // for each receiver
 	{
 		if (receivers[i][0] == '#') // if receiver is a channel
@@ -137,10 +136,6 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 		}
 		else // if receiver is a nickname
 		{
-			// check if nickname is the same as the client sending message
-			if (!receivers[i].compare(_clients[id]->getName()))
-				continue ;
-
 			// check if exist
 			int destfd = getFdByName(receivers[i]);
 			if (destfd == ERROR) // if username not found
@@ -150,11 +145,15 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			}
 
 			// formatting message content in one string
-			msgContent = _clients[id]->getName();
-			msgContent.append(msg[1]);
+			std::string message = ":";
+			message.append(_clients[id]->getName());
+			message.append(" PRIVMSG ");
+			message.append(msg[0]);
+			message.append(" ");
+			message.append(msg[1]);
 
 			// send message content
-			send(destfd, msgContent.c_str(), msgContent.length(), 0);
+			send(destfd, message.c_str(), message.length(), 0);
 		}
 	}
 }
@@ -252,6 +251,8 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 
 		_channels[j]->joinChannelMessage(_clients[id]->getFd(), _clients[id]->getName()); //messages when first connecting to channel
 		rpl_topic(*_clients[id], *_channels[j]);
+		rpl_namereply(*_clients[id], *_channels[j]);
+		rpl_endofnames(*_clients[id], *_channels[j]);
 		std::cerr << "testttt = " << _channels[j]->getName();
 		_clients[id]->addChannel(channelNames[i]); // add channel in client class
 		_clients[id]->removeInvite(channelNames[i]); // remove channel from client invites
@@ -615,23 +616,23 @@ void Server::process_commands(std::string input, int id)
     }
 }
 
-bool is_available_username(std::vector<Client *> clients, size_t id)
-{
-	for (size_t i = 0; i < clients.size(); i++)
-	{
-		if (id == i || !clients[i]->info_set)
-			continue ;
-		clients[id]->compareNames(clients[i]->getName());
-		if (clients[id]->getName().empty())
-		{
-			print_error_message(USERNAME_NOT_AVAILABLE, clients[id]->getFd());
-			return (false);
-		}
-	}
-	std::cout << clients[id]->getName() << " is logged" << std::endl;
-	rpl_welcome(*clients[id]);
-	return (true);
-}
+// bool is_available_username(std::vector<Client *> clients, size_t id)
+// {
+// 	for (size_t i = 0; i < clients.size(); i++)
+// 	{
+// 		if (id == i || !clients[i]->info_set)
+// 			continue ;
+// 		clients[id]->compareNames(clients[i]->getName());
+// 		if (clients[id]->getName().empty())
+// 		{
+// 			print_error_message(USERNAME_NOT_AVAILABLE, clients[id]->getFd());
+// 			return (false);
+// 		}
+// 	}
+// 	std::cout << clients[id]->getName() << " is logged" << std::endl;
+// 	rpl_welcome(*clients[id]);
+// 	return (true);
+// }
 
 int Server::startServer(void)
 {
@@ -723,7 +724,9 @@ int Server::startServer(void)
 				continue ;
 			}
 			
+			//test bigboss pour tronc
 			int msglen = recv(fds[i].fd, buffer, sizeof(buffer), 0);
+			std::cerr << "msglen = " << msglen << std::endl;
 			if (msglen == ERROR)
 			{
 				std::cerr << RED << "Error: recv failed" << RESET << std::endl;
@@ -753,20 +756,14 @@ int Server::startServer(void)
 			// check each cmd in buffer
 			for (size_t k = 0; k < cmds.size(); k++)
 			{
-				// std::cerr << "bouuuuuuuuuuuuuuuucle" << std::endl;
 				//removing '\r'
 				if (cmds[k][cmds[k].size() -1] == '\r')
 					cmds[k].erase(cmds[k].size() - 1); // remove \n at the end
 
-				if (!_clients[i - FIRST_CLIENT]->info_set)
-				{
-					// process input as command (PASS / NICK / USER)
-					_clients[i - FIRST_CLIENT]->log_in(cmds[k], _password);
-
-					// if client fullfilled info -> check if username is available
-					if (_clients[i - FIRST_CLIENT]->check_informations())
-						_clients[i - FIRST_CLIENT]->info_set = is_available_username(_clients, i - FIRST_CLIENT);
-				}
+				if (!_clients[i - FIRST_CLIENT]->pass_set)// process PASS
+					_clients[i - FIRST_CLIENT]->check_password_input(cmds[k], _password);
+				else if (!_clients[i - FIRST_CLIENT]->nick_set || !_clients[i -FIRST_CLIENT]->user_set) // process NICK / USER
+					_clients[i - FIRST_CLIENT]->identifying(cmds[k], _clients);
 				else
 				{
 					std::cout << "Received : " << buffer;

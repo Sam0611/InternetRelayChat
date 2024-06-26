@@ -5,6 +5,10 @@
 
 void    rpl_welcome(Client client);
 void    rpl_topic(Client client, Channel channel);
+void    rpl_namereply(Client client, Channel channel);
+void    rpl_endofnames(Client client, Channel channel);
+void    err_NEEDMOREPARAMS(int fd, std::string command);
+void    err_passwdmismatch(int fd);
 
 
 /*      DEFINE          */
@@ -12,6 +16,11 @@ void    rpl_topic(Client client, Channel channel);
 #define RPL_WELCOME "001"
 #define RPL_NOTOPIC "331"
 #define RPL_TOPIC "332"
+#define RPL_NAMREPLY "353"
+#define RPL_ENDOFNAMES "366"
+#define ERR_NEEDMOREPARAMS "461"
+#define ERR_PASSWDMISMATCH "464"
+
 
 
 #endif
