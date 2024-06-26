@@ -3,15 +3,16 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: smalloir <marvin@42.fr>                    +#+  +:+       +#+         #
+#    By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2023/01/29 19:53:46 by smalloir          #+#    #+#              #
-#    Updated: 2024/06/07 17:59:06 by sam              ###   ########.fr        #
+#    Created: 2023/10/17 01:45:34 by sbeaucie          #+#    #+#              #
+#    Updated: 2023/10/17 01:45:34 by sbeaucie         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
+
 #           ----------========== {     VARS     } ==========----------
 
-NAME = ircserv
+NAME = bot
 CC = c++
 FLAGS = -Wall -Wextra -Werror -std=c++98
 
@@ -19,17 +20,12 @@ FLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRC =\
 	main.cpp\
-	Server.cpp\
-	Client.cpp\
-	utils.cpp\
-	Channel.cpp\
-	NumericReply.cpp
+	IrcBot.cpp
 
 #           ----------========== {     OBJS     } ==========----------
 
 OBJ_DIR = obj_dir/
 OBJ = $(addprefix $(OBJ_DIR), $(SRC:.cpp=.o))
-OBJ_BONUS = $(addprefix $(OBJ_DIR), $(SRC_BONUS:.cpp=.o))
 
 #           ----------========== {    RULES    } ==========----------
 
