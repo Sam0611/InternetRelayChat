@@ -42,9 +42,10 @@ class Channel
         bool checkPassword(std::string password) const;
         bool limitReached() const;
         bool getMode(char mode); // mode = i/t/k/o/l
-        void changeMode(char change, char mode);
+        void changeMode(bool activate, char mode);
         void changeMode(char mode, size_t len, int fd);
-        void changeMode(char change, char mode, std::string str);
+        void changeMode(bool activate, char mode, std::string str, std::string client_name, int client_id);
+        bool needArgMode(bool activate, char mode);
         std::map<std::string, int>::iterator getUsersbegin(void);
         std::map<std::string, int>::iterator getUsersend(void);
 };

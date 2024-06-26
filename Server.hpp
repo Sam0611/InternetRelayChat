@@ -29,7 +29,7 @@ class Server
         long                    _port;
         int                     _socket;
         std::vector<Client *>   _clients;
-        std::vector<Channel *>   _channels;
+        std::vector<Channel *>  _channels;
         int getFdByName(const std::string name);
         size_t getClientId(const std::string name);
         size_t getChannelId(const std::string name);

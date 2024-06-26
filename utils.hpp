@@ -27,6 +27,7 @@
 #include <sys/socket.h> // socket
 #include <netinet/in.h> // sockaddr_in htons recv
 #include <poll.h> // poll
+#include <cstdlib> //strtol
 
 
 /*      DEFINE          */
@@ -39,6 +40,8 @@
 #define BUFFER_SIZE 512
 #define FIRST_CLIENT 2
 #define SERVER "スマブラチム"
+#define MODES "iklot"
+
 
 /*      ENUM            */
 

@@ -155,12 +155,19 @@ bool Channel::getMode(char mode) // i/t/k/l
     return (false);
 }
 
-// i / t / -k / -l
-void Channel::changeMode(char change, char mode)
+bool Channel::needArgMode(bool activate, char mode)
 {
-    if (change == '-')
+    if (activate == true && (mode == 'k' || mode == 'l' || mode == 'o'))
+        return (true);
+    return (false);
+}
+
+// i / t / -k / -l
+void Channel::changeMode(bool activate, char mode)
+{
+    if (!activate)
         _mode[mode] = false;
-    if (change == '+')
+    else if (activate)
         _mode[mode] = true;
 }
 
@@ -184,29 +191,51 @@ void Channel::changeMode(char mode, size_t len, int fd)
 }
 
 // o / +k
-void Channel::changeMode(char change, char mode, std::string str)
+void Channel::changeMode(bool activate, char mode, std::string str, std::string client_name, int client_id)
 {
     if (mode == 'k')
     {
+        if (str.empty())
+            return ;
         _mode[mode] = true;
         _password = str;
+        std::string message = ":";
+        message.append(client_name);
+        message.append(" MODE ");
+        message.append(_name);
+        message.append(" ");
+        if (activate)
+            message.append("+");
+        else
+            message.append("-");
+        message.push_back(mode);
+        message.append(" ");
+        message.append(str);
+        message.append("\r\n");
+        send(client_id, message.c_str(), message.length(), 0);
         return ;
     }
 
     // mode = o
     std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), str);
-    if (change == '-' && it != _operator.end())
+    if (!activate && it != _operator.end())
+    {
         _operator.erase(it);
-    if (change == '+' && it == _operator.end())
+
+    }
+    if (activate && it == _operator.end())
+    {
         _operator.push_back(str);
+
+    }
 }
 
-std::map<std::string, int>::iterator    Channel::getUsersbegin(void)
+std::map<std::string, int>::iterator Channel::getUsersbegin(void)
 {
     return (_users.begin());
 }
 
-std::map<std::string, int>::iterator    Channel::getUsersend(void)
+std::map<std::string, int>::iterator Channel::getUsersend(void)
 {
     return (_users.end());
 }
