@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   IrcBot.hpp                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/26 17:23:30 by sbeaucie          #+#    #+#             */
+/*   Updated: 2024/06/26 19:17:20 by sbeaucie         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef IRCBOT_HPP
 # define IRCBOT_HPP
 
@@ -6,13 +18,16 @@
 
 # define BUFFER_SIZE 512
 
+int		sockfd;
+bool	isquit = false;
+
 class IrcBot
 {
 private:
     std::string server;
     int         port;
     std::string password;
-    int         sockfd;
+    // int         sockfd;
 
     void    handleMessage(const std::string &msg);
     std::vector<std::string>    splitMessage(const std::string &msg, char delimiter);
@@ -40,7 +55,7 @@ public:
     class ConnectionFailedException : public std::exception {
         const char *what() const throw();
     };
-    
+
 };
 
 #endif

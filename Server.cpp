@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: sam </var/spool/mail/sam>                  +#+  +:+       +#+        */
+/*   By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/09 18:05:08 by sam               #+#    #+#             */
-/*   Updated: 2024/06/16 18:10:22 by smalloir         ###   ########.fr       */
+/*   Updated: 2024/06/26 17:32:00 by sbeaucie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -210,7 +210,7 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 		{
 			// create new channel
 			_channels.push_back(new Channel(channelNames[i], _clients[id]->getName(), _clients[id]->getFd()));
-			
+
 			// if password, set mode +k with this password
 			if (i < channelPasswords.size())
 				_channels[j]->changeMode('+', 'k', channelPasswords[i]);
@@ -508,7 +508,7 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 			_channels[i]->changeMode(msg[1][0], msg[1][1]);
 		return ;
 	}
-	
+
 	// msg size = 3
 
 	// check error number args
@@ -534,7 +534,7 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 	}
 
 	// if +k and password contains ',' or ':'
-	if (!msg[1].compare("+k") 
+	if (!msg[1].compare("+k")
 		&& (msg[2].find(',') != std::string::npos || msg[2].find(':') != std::string::npos))
 	{
 		print_error_message(INVALID_PASSWORD, _clients[id]->getFd());
@@ -542,7 +542,7 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 	}
 
 	// if +o and user is in the channel
-	if (!msg[1].compare("+o") && !_channels[i]->isMember(msg[2])) 
+	if (!msg[1].compare("+o") && !_channels[i]->isMember(msg[2]))
 	{
 		print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
 		return ;
@@ -581,7 +581,7 @@ void Server::list_channels(std::vector<std::string> msg, int id)
 void Server::quit(std::string msg, int id)
 {
     if (!msg.empty())
-        std::cout << "disconnexion :" << msg << std::endl;
+        std::cout << "disconnexion " << msg << std::endl;
     else
         std::cout << "disconnected" << std::endl;
 
@@ -591,7 +591,7 @@ void Server::quit(std::string msg, int id)
         _fds[id + FIRST_CLIENT].fd = _fds[_nfds].fd;
     _fds[_nfds].fd = 0;
     _fds[id + FIRST_CLIENT].revents = 0;
-    
+
     delete _clients[id];
     _clients.erase(_clients.begin() + (id));
 }
@@ -720,8 +720,11 @@ int Server::startServer(void)
 				continue ;
 
 			if (_fds[i].revents != POLLIN)
-                quit(NULL, i - FIRST_CLIENT);
-			
+			{
+                quit("", i - FIRST_CLIENT);
+				continue ;
+			}
+
 			//test bigboss pour trunc
 			int msglen = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
 			std::cerr << "msglen = " << msglen << std::endl;
@@ -732,7 +735,10 @@ int Server::startServer(void)
 			}
 
 			if (!buffer[0]) // ctrl+C
-                quit(NULL, i - FIRST_CLIENT);
+			{
+                quit("", i - FIRST_CLIENT);
+				continue ;
+			}
 
 				//bigboss test
 			std::cerr << "test : " << buffer << std::endl;
@@ -767,7 +773,7 @@ int Server::startServer(void)
 				buffer[j] = 0;
 		}
 	}
- 
+
 	// closing fd clients still connected when server ends
 	for (int i = FIRST_CLIENT; i < _nfds; i++)
 		if (_fds[i].fd > 0)
