@@ -316,9 +316,9 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
         return ;
     }
 
-	// check if channel exists
+	// check if channel exists and client is in it
 	size_t i = getChannelId(msg[0]);
-	if (i == _channels.size())
+	if (i == _channels.size() || !_channels[i]->isMember(_clients[id]->getName()))
     {
         print_error_message(CHANNEL_NOT_FOUND, _clients[id]->getFd());
         return ;
@@ -455,9 +455,7 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	send(_clients[j]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
 }
 
-// MODE #chan +i
-// MODE #chan
-// MODE #chan +kl mdp 3
+// MODE #chan +kl-i+o mdp 3 acomet
 void Server::change_mode(std::vector<std::string> msg, int id)
 {
 	std::string	modes = MODES;
@@ -469,9 +467,9 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 		return ;
     }
 
-	// check if channel exists
+	// check if channel exists and client is in it
 	size_t i = getChannelId(msg[0]);
-	if (i == _channels.size())
+	if (i == _channels.size() || !_channels[i]->isMember(_clients[id]->getName()))
     {
         print_error_message(CHANNEL_NOT_FOUND, _clients[id]->getFd());
         return ;
@@ -507,111 +505,73 @@ void Server::change_mode(std::vector<std::string> msg, int id)
     }
 
     bool activate = true;
+	size_t argModes = 0;
+	size_t len = 0;
+
+	// parsing : no double mode, no invalid mode, number of arguments, no invalide limit users
+    for (size_t j = 0; j < msg[1].size(); j++)
+	{
+        if (msg[1][j] == '-')
+            activate = false;
+        else if (msg[1][j] == '+')
+            activate = true;
+		else if (modes.find(msg[1][j]) == std::string::npos || msg[1].substr(j + 1).find(msg[1][j]) != std::string::npos)
+        {
+            print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+            return ;
+        }
+
+		if (activate && msg[1][j] == 'l')
+		{
+			if (msg.size() <= argModes + 2)
+			{
+				print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+				return ;
+			}
+			std::istringstream ss(msg[2 + argModes]);
+			ss >> len;
+			if (ss.fail() || !ss.eof())
+			{
+				print_error_message(INVALID_FORMAT, _clients[id]->getFd());
+				return ;
+			}
+		}
+
+		if (_channels[i]->needArgMode(activate, msg[1][j]))
+			argModes++;
+	}
+	if (argModes != msg.size() - 2)
+	{
+		print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
+		return ;
+	}
+
+	// apply change of mode
     for (size_t j = 0; j < msg[1].size(); j++)
     {
         if (msg[1][j] == '-')
             activate = false;
         else if (msg[1][j] == '+')
             activate = true;
-        else if (modes.find(msg[1][j]) != std::string::npos)
-        {
-            if (_channels[i]->needArgMode(activate, msg[1][j]))
-            {
-                if (msg[1][j] == 'l' && msg.size() > 2) //verif out of bounds
-                {
-                    size_t len; //= strtol(msg[2].c_str(), NULL, 10);
-                    std::istringstream ss(msg[2]);
-                    ss >> len;
-                    if (ss.fail() || !ss.eof())
-                    {
-                        print_error_message(INVALID_FORMAT, _clients[id]->getFd());
-                        return ;
-                    }
-                    _channels[i]->changeMode(msg[1][j], len, _clients[id]->getFd());
-                    msg.erase(msg.begin() + 2);
-                }
-                else if (msg.size() > 2) //verif out of bounds
-                {
-                    _channels[i]->changeMode(activate, msg[1][j], msg[2], _clients[id]->getName(), _clients[id]->getFd());
-                    msg.erase(msg.begin() + 2);
-                }
-            }
-            else
-                _channels[i]->changeMode(activate, msg[1][j]);
-        }
-        else
-        {
-            print_error_message(INVALID_FORMAT, _clients[id]->getFd());
-            return ;
-        }
+        else if (_channels[i]->needArgMode(activate, msg[1][j]))
+		{
+			if (msg[1][j] == 'l')
+				_channels[i]->changeMode(msg[1][j], len, _clients[id]->getFd());
+			else if (msg[1][j] == 'k')
+				_channels[i]->changeMode(activate, msg[1][j], msg[2], _clients[id]->getName(), _clients[id]->getFd());
+			else // +o
+			{
+				size_t opId = getClientId(msg[2]);
+				if (opId != _clients.size())
+					_channels[i]->changeOperator(activate, _clients[opId]);
+			}
+			msg.erase(msg.begin() + 2);
+		}
+		else if (msg[1][j] == 'o') // -o
+			_channels[i]->changeOperator(activate, _clients[id]);
+		else
+			_channels[i]->changeMode(activate, msg[1][j]);
     }
-
-
-	// check mode string size (must be = 2), check sign (+/-) and check mode (i/k/l/o/t)
-	// if (msg[1].size() != 2 || (msg[1][0] != '-' && msg[1][0] != '+')
-	// 	|| modes.find(msg[1][1]) == std::string::npos)
-    // {
-    //     print_error_message(INVALID_FORMAT, _clients[id]->getFd());
-    //     return ;
-    // }
-
-	// if (msg.size() == 2)
-	// {
-	// 	// check error number args
-	// 	if (!msg[1].compare("+k") || !msg[1].compare("+o") || !msg[1].compare("+l"))
-	// 	{
-	// 		print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
-	// 		return ;
-	// 	}
-
-	// 	if (!msg[1].compare("-o"))
-	// 		_channels[i]->changeMode(msg[1][0], msg[1][1],  _clients[id]->getName());
-	// 	else
-	// 		_channels[i]->changeMode(msg[1][0], msg[1][1]);
-	// 	return ;
-	// }
-	
-	// // msg size = 3
-
-	// // check error number args
-	// if (msg[1].compare("+k") && msg[1].compare("+o") && msg[1].compare("+l"))
-	// {
-	// 	print_error_message(WRONG_ARG_NUMBER, _clients[id]->getFd());
-	// 	return ;
-	// }
-
-	// // convert msg[2] to int when +l mode
-	// if (!msg[1].compare("+l"))
-	// {
-	// 	size_t len;
-	// 	std::istringstream ss(msg[2]);
-	// 	ss >> len;
-	// 	if (ss.fail() || !ss.eof())
-	// 	{
-	// 		print_error_message(INVALID_FORMAT, _clients[id]->getFd());
-	// 		return ;
-	// 	}
-	// 	_channels[i]->changeMode(msg[1][1], len);
-	// 	return ;
-	// }
-
-	// // if +k and password contains ',' or ':'
-	// if (!msg[1].compare("+k") 
-	// 	&& (msg[2].find(',') != std::string::npos || msg[2].find(':') != std::string::npos))
-	// {
-	// 	print_error_message(INVALID_PASSWORD, _clients[id]->getFd());
-	// 	return ;
-	// }
-
-	// // if +o and user is in the channel
-	// if (!msg[1].compare("+o") && !_channels[i]->isMember(msg[2])) 
-	// {
-	// 	print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
-	// 	return ;
-	// }
-
-	// // change mode with +k or +o
-	// _channels[i]->changeMode(msg[1][0], msg[1][1], msg[2]);
 }
 
 // LIST
@@ -709,6 +669,12 @@ void Server::process_commands(std::string input, int id)
     }
 }
 
+void stop_server(int signal)
+{
+	(void)signal;
+	// std::cout << "ctrl+C detected\n";
+}
+
 int Server::startServer(void)
 {
 	// set poll variables
@@ -731,6 +697,8 @@ int Server::startServer(void)
 	char buffer[BUFFER_SIZE]; // clients
 	for (size_t i = 0; i < sizeof(buffer); i++)
 		buffer[i] = 0;
+	
+	signal(SIGINT, stop_server);
 
 	while (1)
 	{
@@ -782,7 +750,10 @@ int Server::startServer(void)
 				continue ;
 
 			if (_fds[i].revents != POLLIN)
-                quit(NULL, i - FIRST_CLIENT);
+			{
+                quit("", i - FIRST_CLIENT);
+				continue ;
+			}
 			
 			//test bigboss pour trunc
 			int msglen = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
@@ -794,7 +765,10 @@ int Server::startServer(void)
 			}
 
 			if (!buffer[0]) // ctrl+C
-                quit(NULL, i - FIRST_CLIENT);
+			{
+                quit("", i - FIRST_CLIENT);
+				continue ;
+			}
 
 				//bigboss test
 			std::cerr << "test : " << buffer << std::endl;

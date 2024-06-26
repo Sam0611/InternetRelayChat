@@ -11,6 +11,7 @@
 /* ************************************************************************** */
 
 #include "Channel.hpp"
+#include "Client.hpp"
 
 Channel::Channel(std::string name, std::string opName, int opFd) : _name(name)
 {
@@ -190,15 +191,15 @@ void Channel::changeMode(char mode, size_t len, int fd)
     _limit = len;
 }
 
-// o / +k
-void Channel::changeMode(bool activate, char mode, std::string str, std::string client_name, int client_id)
+// +k
+void Channel::changeMode(bool activate, char mode, std::string pass, std::string client_name, int client_id)
 {
     if (mode == 'k')
     {
-        if (str.empty())
+        if (pass.empty())
             return ;
         _mode[mode] = true;
-        _password = str;
+        _password = pass;
         std::string message = ":";
         message.append(client_name);
         message.append(" MODE ");
@@ -210,24 +211,20 @@ void Channel::changeMode(bool activate, char mode, std::string str, std::string 
             message.append("-");
         message.push_back(mode);
         message.append(" ");
-        message.append(str);
+        message.append(pass);
         message.append("\r\n");
         send(client_id, message.c_str(), message.length(), 0);
         return ;
     }
+}
 
-    // mode = o
-    std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), str);
+void Channel::changeOperator(bool activate, Client *client)
+{
+    std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), client->getName());
     if (!activate && it != _operator.end())
-    {
         _operator.erase(it);
-
-    }
     if (activate && it == _operator.end())
-    {
-        _operator.push_back(str);
-
-    }
+        _operator.push_back(client->getName());
 }
 
 std::map<std::string, int>::iterator Channel::getUsersbegin(void)

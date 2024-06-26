@@ -28,6 +28,7 @@
 #include <netinet/in.h> // sockaddr_in htons recv
 #include <poll.h> // poll
 #include <cstdlib> //strtol
+#include <csignal> //signal
 
 
 /*      DEFINE          */

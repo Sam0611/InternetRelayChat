@@ -15,6 +15,8 @@
 
 #include "utils.hpp"
 
+class Client;
+
 class Channel
 {
     private:
@@ -44,7 +46,8 @@ class Channel
         bool getMode(char mode); // mode = i/t/k/o/l
         void changeMode(bool activate, char mode);
         void changeMode(char mode, size_t len, int fd);
-        void changeMode(bool activate, char mode, std::string str, std::string client_name, int client_id);
+        void changeMode(bool activate, char mode, std::string pass, std::string client_name, int client_id);
+        void changeOperator(bool activate, Client *client);
         bool needArgMode(bool activate, char mode);
         std::map<std::string, int>::iterator getUsersbegin(void);
         std::map<std::string, int>::iterator getUsersend(void);
