@@ -18,20 +18,18 @@
 
 # define BUFFER_SIZE 512
 
-int		sockfd;
-bool	isquit = false;
-
 class IrcBot
 {
 private:
     std::string server;
     int         port;
     std::string password;
-    // int         sockfd;
 
     void    handleMessage(const std::string &msg);
     std::vector<std::string>    splitMessage(const std::string &msg, char delimiter);
     void closeConnection();
+
+    std::string translateText(const std::string &text, const std::string &targetLang);
 public:
     IrcBot();
     IrcBot(const std::string &server, int port, const std::string &password);

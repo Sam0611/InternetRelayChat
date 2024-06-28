@@ -29,7 +29,7 @@ int main(int ac, char **av)
 
         IrcBot bot(server, port, password);
         bot.connect();
-        bot.joinChannel("#r3d2");
+        bot.joinChannel("#c2po");
         bot.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;

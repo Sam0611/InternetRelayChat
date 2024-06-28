@@ -36,7 +36,7 @@ $(OBJ_DIR)%.o: %.cpp
 	@echo -n "\e[1;42m \e[0;m"
 
 $(NAME): $(OBJ_DIR) $(OBJ)
-	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
+	@$(CC) $(FLAGS) $(OBJ) -o $(NAME) -lcurl
 	@echo -n "\e[1;32m [Compiled]\e[0;m\n"
 
 $(OBJ_DIR):
