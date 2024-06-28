@@ -699,7 +699,6 @@ void Server::process_commands(std::string input, int id)
 void stop_server(int signal)
 {
 	(void)signal;
-	// std::cout << "ctrl+C detected\n";
 }
 
 int Server::startServer(void)
@@ -730,10 +729,7 @@ int Server::startServer(void)
 	while (1)
 	{
 		if (poll(_fds, _nfds, 0) == ERROR)
-		{
-			std::cerr << RED << "Error: poll failed" << RESET << std::endl;
-			return (1);
-		}
+			break ;
 
 		// stdin
 		if (_fds[0].revents != 0)
@@ -751,7 +747,7 @@ int Server::startServer(void)
 			if (fdClient == ERROR)
 			{
 				std::cerr << RED << "Error: accept failed" << RESET << std::endl;
-				return (1);
+				break ;
 			}
 
 			// check if number of max connection has been reached
