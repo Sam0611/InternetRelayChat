@@ -117,6 +117,19 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 	// get receivers separated by commas
 	std::vector<std::string> receivers = splitString(msg[0], ',');
 
+	// suppr duplicates
+	for (size_t i = 0; i < receivers.size() - 1; i++)
+	{
+		for (size_t j = i + 1; j < receivers.size(); j++)
+		{
+			if (!receivers[i].compare(receivers[j]))
+			{
+				receivers.erase(receivers.begin() + j);
+				j--;
+			}
+		}
+	}
+
 	msg[1].append("\r\n");
 	for (size_t i = 0; i < receivers.size(); i++) // for each receiver
 	{
