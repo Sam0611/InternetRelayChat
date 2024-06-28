@@ -129,10 +129,18 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 				continue ;
 			}
 
+			// formatting message content in one string
+			std::string message = ":";
+			message.append(_clients[id]->getName());
+            message.append(" PRIVMSG ");
+			message.append(msg[0]);
+            message.append(" ");
+			message.append(msg[1]);
+
 			// send message to everyone in the channel
 			for (size_t j = 0; j < _channels.size(); j++)
 				if (!receivers[i].compare(_channels[j]->getName()))
-					_channels[j]->sendMessage(_clients[id]->getName(), msg[1]);
+					_channels[j]->sendMessageloop(_clients[id]->getName());
 		}
 		else // if receiver is a nickname
 		{

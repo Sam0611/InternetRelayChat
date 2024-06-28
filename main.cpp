@@ -38,6 +38,12 @@ int	main(int ac, char **av)
 		return (1);
 	}
 
+    if (password.empty())
+    {
+        std::cerr << RED << "Error: Password can't be empty" << RESET << std::endl;
+        return (1);
+    }
+
 	if (server.createServer(av[1]) == ERROR)
 		return (1);
 

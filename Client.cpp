@@ -37,15 +37,13 @@ void Client::check_password_input(std::string input, std::string password)
     if (msg.size() < 2)
     {
         print_error_message(NEED_MORE_PARAM, _fd);
-        return ;
+        return;
     }
 
+    std::cerr << "mdp = " << msg[1] << std::endl;
+
     if (!msg[msg.size() -1].compare(password))
-    {
         pass_set = true;
-        
-        std::cerr << "password entered" << std::endl; // bigboss test a suppr
-    }
     else
         print_error_message(PASSWORD_MISSMATCH, _fd);
 }
@@ -129,7 +127,7 @@ void Client::identifying(std::string input, std::vector<Client *> clients)
             set_usernames(msg);
 			break ;
         default:
-            print_error_message(COMMAND_NOT_FOUND, _fd);
+            print_error_message(NOT_NICK_USER, _fd);
     }
 }
 

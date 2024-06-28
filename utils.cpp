@@ -68,6 +68,9 @@ void print_error_message(int e, int fd)
         case PASSWORD_MISSMATCH:
             errorMessage.append(" 464 :Password incorrect\r\n");
             break ;
+        case PASSWORD_EMPTY:
+            errorMessage.append(" :Password can't be empty\r\n");
+			break ;
         case NO_NICKNAME_GIVEN:
             errorMessage.append(" 431 :No nickname given\r\n");
             break ;
@@ -82,6 +85,9 @@ void print_error_message(int e, int fd)
             break ;
         case ALREADY_REGISTERED:
             errorMessage.append(" 462 :Already registered\r\n");
+            break ;
+        case NOT_NICK_USER:
+            errorMessage.append(" :Must enter Nick/User\r\n");
             break ;
         case COMMAND_NOT_FOUND:
             errorMessage.append(" :wrong command\r\n");
