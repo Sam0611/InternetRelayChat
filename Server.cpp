@@ -133,14 +133,14 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			std::string message = ":";
 			message.append(_clients[id]->getName());
             message.append(" PRIVMSG ");
-			message.append(msg[0]);
+			message.append(receivers[i]);
             message.append(" ");
 			message.append(msg[1]);
 
 			// send message to everyone in the channel
 			for (size_t j = 0; j < _channels.size(); j++)
 				if (!receivers[i].compare(_channels[j]->getName()))
-					_channels[j]->sendMessageloop(_clients[id]->getName());
+					_channels[j]->sendMessageloop(message);
 		}
 		else // if receiver is a nickname
 		{
@@ -157,7 +157,7 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			std::string message = ":";
 			message.append(_clients[id]->getName());
 			message.append(" PRIVMSG ");
-			message.append(msg[0]);
+			message.append(receivers[i]);
 			message.append(" ");
 			message.append(msg[1]);
 
