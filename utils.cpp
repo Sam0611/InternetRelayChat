@@ -42,6 +42,22 @@ std::vector<std::string> splitString(std::string str, char delimiter, char end)
     return (vec);
 }
 
+// void print_message(int m, int fd)
+// {
+//     std::string message = ":";
+
+//     switch(m)
+//     {
+//         // case ;
+//         //     message.append("");
+//         //     break;
+//         default
+//             return;
+//     }
+
+//     send(fd, message.c_str(), message.length(), 0);
+// }
+
 void print_error_message(int e, int fd)
 {
     std::string errorMessage = ":";

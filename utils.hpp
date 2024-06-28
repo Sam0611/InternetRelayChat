@@ -77,6 +77,7 @@ enum err
 /*      FUNCTIONS       */
 
 void print_error_message(int e, int fd);
+void print_message(int m, int fd);
 std::vector<std::string> splitString(std::string str, char delimiter);
 std::vector<std::string> splitString(std::string str, char delimiter, char end);
 

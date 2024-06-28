@@ -213,16 +213,20 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			
 			// if password, set mode +k with this password
 			if (i < channelPasswords.size())
-				_channels[j]->changeMode('+', 'k', channelPasswords[i], _clients[id]->getName(), _clients[id]->getFd());
+				_channels[j]->changeMode('+', 'k', channelPasswords[i]);
 		}
 		else // channel already exists
 		{
 			// check if mode invite only and client does'nt have invite
 			if (_channels[j]->getMode('i') && !_clients[id]->hasInvite(channelNames[i]))
 			{
-				message = "You can't join ";
+				message = ":";
+				message.append(SERVER);
+				message.append(" 473 ");
+				message.append(_clients[id]->getName());
+				message.append(" ");
 				message.append(channelNames[i]);
-				message.append(" : invite only\n");
+				message.append(" :Cannot join channel (+i)\r\n");
 				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 				continue ;
 			}
@@ -230,20 +234,27 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			// check if key mode and password is wrong
 			if (_channels[j]->getMode('k') && (i >= channelPasswords.size() || !_channels[j]->checkPassword(channelPasswords[i])))
 			{
-				print_error_message(CHANNEL_PASSWORD_INCORRECT, _clients[i]->getFd());
-				// message = "You can't join ";
-				// message.append(channelNames[i]);
-				// message.append(" : wrong password\n");
-				// send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				message = ":";
+				message.append(SERVER);
+				message.append(" 475 ");
+				message.append(_clients[id]->getName());
+				message.append(" ");
+				message.append(channelNames[i]);
+				message.append(" :Cannot join channel (+k)\r\n");
+				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 				continue ;
 			}
 
 			// check if limit of users set and reached
 			if (_channels[j]->getMode('l') && _channels[j]->limitReached())
 			{
-				message = "You can't join ";
+				message = ":";
+				message.append(SERVER);
+				message.append(" 471 ");
+				message.append(_clients[id]->getName());
+				message.append(" ");
 				message.append(channelNames[i]);
-				message.append(" : limit number of users reached\n");
+				message.append(" :Cannot join channel (+l)\r\n");
 				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
 				continue ;
 			}
@@ -252,9 +263,9 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 		}
 
 		_channels[j]->joinChannelMessage(_clients[id]->getFd(), _clients[id]->getName()); //messages when first connecting to channel
-		rpl_topic(*_clients[id], *_channels[j]);
-		rpl_namereply(*_clients[id], *_channels[j]);
-		rpl_endofnames(*_clients[id], *_channels[j]);
+		rpl_topic(_clients[id], _channels[j]);
+		rpl_namereply(_clients[id], _channels[j]);
+		rpl_endofnames(_clients[id], _channels[j]);
 		_clients[id]->addChannel(channelNames[i]); // add channel in client class
 		_clients[id]->removeInvite(channelNames[i]); // remove channel from client invites
 
@@ -327,10 +338,7 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
 	// view channel's topic
 	if (msg.size() == 1)
 	{
-		std::string topic = _channels[i]->getName();
-		topic.append(_channels[i]->getTopic());
-		topic.append("\n");
-		send(_clients[id]->getFd(), topic.c_str(), topic.length(), 0);
+		rpl_topic(_clients[id], _channels[i]);
 		return ;
 	}
 
@@ -342,10 +350,20 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
     }
 
 	// change topic if is operator
-	if (_channels[i]->isOperator(_clients[id]->getName()))
-		_channels[i]->setTopic(_clients[id]->getName(), msg[1]);
-	else
+	if (!_channels[i]->isOperator(_clients[id]->getName()))
+	{
         print_error_message(PERM_DENIED, _clients[id]->getFd());
+		return;
+	}
+	_channels[i]->setTopic(_clients[id]->getName(), msg[1]);
+	std::string message = ":";
+	message.append(_clients[id]->getName());
+	message.append(" PRIVMSG ");
+	message.append(_channels[i]->getName());
+	message.append(" changed topic : ");
+	message.append(msg[1].substr(1));
+	message.append("\r\n");
+	_channels[i]->sendMessageloop(message);
 }
 
 // KICK #chan acomet :he is a bigboss
@@ -374,7 +392,7 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
     }
 
 	// check if executor is operator
-	if (!_channels[i]->isOperator(_clients[id]->getName()))
+	if (!_channels[i]->isOperator(_clients[id]->getName()) || _channels[i]->isOperator(msg[1]))
 	{
 		print_error_message(PERM_DENIED, _clients[id]->getFd());
 		return ;
@@ -382,15 +400,11 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
 
 	// check if user to kick exists and is in channel
 	size_t j = getClientId(msg[1]);
-	if (j == _clients.size() || !_channels[i]->isMember(msg[1]))
+	if (j == _clients.size() || !_channels[i]->isMember(msg[1]) || _channels[i]->isOperator(msg[1]))
     {
         print_error_message(USER_NOT_FOUND, _clients[id]->getFd());
         return ;
     }
-
-	// removing
-	_clients[j]->removeChannel(_channels[i]->getName());
-	_channels[i]->removeUser(_clients[i]->getName());
 
 	// get comment
 	std::string reason;
@@ -401,20 +415,23 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
 	}
 
 	// send message to channel members
-	std::string message = " has been kicked from channel";
+	std::string message = ":";
+	message.append(_clients[id]->getName());
+	message.append(" KICK ");
+	message.append(_channels[i]->getName());
+	message.append(" ");
+	message.append(_clients[j]->getName());
+	message.append(" ");
 	message.append(reason);
 	message.append("\r\n");
-	_channels[i]->sendMessage(_clients[j]->getName(), message);
+	_channels[i]->sendMessageloop(message);
 
-	// send private message to kicked user
-	message = "You've been kicked from channel ";
-	message.append(_channels[i]->getName());
-	message.append(reason);
-	message.append("\n");
-	send(_clients[j]->getFd(), message.c_str(), message.length(), 0);
+	// removing
+	_clients[j]->removeChannel(_channels[i]->getName());
+	_channels[i]->removeUser(_clients[j]->getName());
 }
 
-// INVITE acomet #chan
+// INVITE acomet #chan //he is a bigoss
 // There is no requirement that the channel the target user is being invited to must exist or be a valid channel
 void Server::invite_to_channel(std::vector<std::string> msg, int id)
 {
@@ -444,14 +461,16 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	// save the invite in the invited client class
 	_clients[j]->saveInvite(msg[1]);
 
-	// send invite message to the invited
+	// send rpl_invite and invite message to the invited
+	rpl_inviting(_clients[id], _clients[j], _channels[getChannelId(msg[1])]);
 	std::string inviteMessage = ":";
 	inviteMessage.append(_clients[id]->getName());
 	inviteMessage.append(" INVITE ");
-	inviteMessage.append(msg[0]);
+	inviteMessage.append(_clients[j]->getName());
 	inviteMessage.append(" :");
 	inviteMessage.append(msg[1]);
-	inviteMessage.append("\r\r\n");
+	inviteMessage.append("\r\n");
+	_channels[getChannelId(msg[1])]->sendMessageloopExcept(inviteMessage, _clients[id]->getName());
 	send(_clients[j]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
 }
 
@@ -556,19 +575,19 @@ void Server::change_mode(std::vector<std::string> msg, int id)
         else if (_channels[i]->needArgMode(activate, msg[1][j]))
 		{
 			if (msg[1][j] == 'l')
-				_channels[i]->changeMode(msg[1][j], len, _clients[id]->getFd());
+				_channels[i]->changeMode(msg[1][j], len, _clients[id], msg[2]);
 			else if (msg[1][j] == 'k')
-				_channels[i]->changeMode(activate, msg[1][j], msg[2], _clients[id]->getName(), _clients[id]->getFd());
+				_channels[i]->changeMode(activate, msg[1][j], msg[2]);
 			else // +o
 			{
 				size_t opId = getClientId(msg[2]);
 				if (opId != _clients.size())
-					_channels[i]->changeOperator(activate, _clients[opId]);
+					_channels[i]->changeOperator(activate, msg[2]);
 			}
 			msg.erase(msg.begin() + 2);
 		}
 		else if (msg[1][j] == 'o') // -o
-			_channels[i]->changeOperator(activate, _clients[id]);
+			_channels[i]->changeOperator(activate, _clients[id]->getName());
 		else
 			_channels[i]->changeMode(activate, msg[1][j]);
     }
@@ -789,7 +808,7 @@ int Server::startServer(void)
 				{
 					_clients[i - FIRST_CLIENT]->identifying(cmds[k], _clients);
 					if (_clients[i - FIRST_CLIENT]->nick_set && _clients[i - FIRST_CLIENT]->user_set)
-						rpl_welcome(*_clients[i - FIRST_CLIENT]);
+						rpl_welcome(_clients[i - FIRST_CLIENT]);
 				}
 				else
 				{

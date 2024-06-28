@@ -130,7 +130,7 @@ void Channel::setTopic(std::string name, std::string topic)
     // send message to all members saying topic has changed
     std::string message = " changed topic to ";
     message.append(topic);
-    message.append("\n");
+    message.append("\r\n");
     sendMessage(name, message);
 }
 
@@ -166,65 +166,124 @@ bool Channel::needArgMode(bool activate, char mode)
 // i / t / -k / -l
 void Channel::changeMode(bool activate, char mode)
 {
+    std::string message = ":";
+    message.append(SERVER);
+    message.append(" MODE ");
+    message.append(_name);
     if (!activate)
+    {
         _mode[mode] = false;
+        message.append(" -");
+    }
     else if (activate)
+    {
         _mode[mode] = true;
+        message.append(" +");
+    }
+    message.push_back(mode);
+    message.append("\r\n");
+    sendMessageloop(message);
 }
 
 // +l
-void Channel::changeMode(char mode, size_t len, int fd)
+void Channel::changeMode(char mode, size_t len, Client *client, std::string len_str)
 {
+    if (getMode(mode))
+        return;
+
     if (len <= 0)
     {
-        print_error_message(LIMIT_TOO_SMALL, fd);
+        print_error_message(LIMIT_TOO_SMALL, client->getFd());
         return ;
     }
 
     if (len < _users.size())
     {
-        print_error_message(LIMIT_EXCEEDED, fd);
+        print_error_message(LIMIT_EXCEEDED, client->getFd());
         return ;
     }
 
     _mode[mode] = true;
     _limit = len;
+
+    // server response
+    std::string message = ":";
+    message.append(client->getName());
+    message.append(" MODE ");
+    message.append(_name);
+    message.append(" +l ");
+    message.append(len_str);
+    message.append("\r\n");
+    sendMessageloop(message);
 }
 
 // +k
-void Channel::changeMode(bool activate, char mode, std::string pass, std::string client_name, int client_id)
+void Channel::changeMode(bool activate, char mode, std::string pass)
 {
-    if (mode == 'k')
-    {
-        if (pass.empty())
-            return ;
-        _mode[mode] = true;
-        _password = pass;
-        std::string message = ":";
-        message.append(client_name);
-        message.append(" MODE ");
-        message.append(_name);
-        message.append(" ");
-        if (activate)
-            message.append("+");
-        else
-            message.append("-");
-        message.push_back(mode);
-        message.append(" ");
-        message.append(pass);
-        message.append("\r\n");
-        send(client_id, message.c_str(), message.length(), 0);
+    if (pass.empty() || _password == pass)
         return ;
+    _mode[mode] = true;
+    _password = pass;
+
+    //server response
+    std::string message = ":";
+    message.append(SERVER);
+    message.append(" MODE ");
+    message.append(_name);
+    message.append(" ");
+    if (activate)
+        message.append("+");
+    else
+        message.append("-");
+    message.push_back(mode);
+    message.append(" ");
+    message.append(pass);
+    message.append("\r\n");
+    sendMessageloop(message);
+}
+
+// o
+void Channel::changeOperator(bool activate, std::string name)
+{
+    std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), name);
+    std::string message = ":";
+    message.append(SERVER);
+    message.append(" MODE ");
+    message.append(_name);
+    if (!activate && it != _operator.end())
+    {
+        _operator.erase(it);
+        message.append(" -o ");
+    }
+    else if (activate && it == _operator.end())
+    {
+        _operator.push_back(name);
+        message.append(" +o ");
+    }
+    else
+        return;
+    message.append(name);
+    message.append("\r\n");
+    sendMessageloop(message);
+}
+
+void Channel::sendMessageloop(std::string message)
+{
+    std::map<std::string, int>::iterator it;
+    for (it = _users.begin(); it != _users.end(); it++)
+    {
+        send(it->second, message.c_str(), message.length(), 0);
     }
 }
 
-void Channel::changeOperator(bool activate, Client *client)
+void Channel::sendMessageloopExcept(std::string message, std::string except)
 {
-    std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), client->getName());
-    if (!activate && it != _operator.end())
-        _operator.erase(it);
-    if (activate && it == _operator.end())
-        _operator.push_back(client->getName());
+    std::map<std::string, int>::iterator it;
+    for (it = _users.begin(); it != _users.end(); it++)
+    {
+        if (it->first != except)
+            send(it->second, message.c_str(), message.length(), 0);
+    }
 }
 
 std::map<std::string, int>::iterator Channel::getUsersbegin(void)
