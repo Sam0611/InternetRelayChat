@@ -77,6 +77,18 @@ void Channel::removeUser(std::string name)
         _users.erase(name);
 }
 
+void Channel::removeOperator(std::string name)
+{
+    for (size_t i = 0; i < _operator.size(); i++)
+    {
+        if (name == _operator[i])
+        {
+            _operator[i].erase();
+            break ;
+        }
+    }
+}
+
 void Channel::sendMessage(std::string name, std::string content)
 {
     //format message channel
@@ -294,4 +306,8 @@ std::map<std::string, int>::iterator Channel::getUsersbegin(void)
 std::map<std::string, int>::iterator Channel::getUsersend(void)
 {
     return (_users.end());
+}
+bool Channel::getChannelSize(void)
+{
+    return (_users.size());
 }

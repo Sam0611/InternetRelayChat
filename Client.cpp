@@ -225,3 +225,8 @@ void Client::removeInvite(std::string name)
     if (it != _invites.end())
         _invites.erase(it);
 }
+
+std::vector<std::string> Client::get_channelNames(void)
+{
+    return (_channelNames);
+}

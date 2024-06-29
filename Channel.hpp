@@ -36,6 +36,7 @@ class Channel
         bool isMember(std::string name);
         void addUser(std::string name, int fd);
         void removeUser(std::string name);
+        void removeOperator(std::string name);
         void sendMessage(std::string name, std::string content);
         void sendMessageloop(std::string message);
         void sendMessageloopExcept(std::string message, std::string except);
@@ -51,6 +52,7 @@ class Channel
         void changeMode(bool activate, char mode, std::string pass);
         void changeOperator(bool activate, std::string name);
         bool needArgMode(bool activate, char mode);
+        bool getChannelSize(void);
         std::map<std::string, int>::iterator getUsersbegin(void);
         std::map<std::string, int>::iterator getUsersend(void);
 };

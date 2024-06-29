@@ -40,6 +40,7 @@ class Client
         void check_password_input(std::string input, std::string password);
         void set_nickname(std::vector<std::string> msg, std::vector<Client *> clients);
         void set_usernames(std::vector<std::string> msg);
+        std::vector<std::string> get_channelNames(void);
 
     private:
         int         _fd;

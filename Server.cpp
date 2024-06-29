@@ -150,10 +150,11 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
             message.append(" ");
 			message.append(msg[1]);
 
+
 			// send message to everyone in the channel
 			for (size_t j = 0; j < _channels.size(); j++)
 				if (!receivers[i].compare(_channels[j]->getName()))
-					_channels[j]->sendMessageloop(message);
+					_channels[j]->sendMessageloopExcept(message, _clients[id]->getName());
 		}
 		else // if receiver is a nickname
 		{
@@ -331,7 +332,11 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 			if (!channelNames[i].compare(_channels[j]->getName()))
 			{
 				_channels[j]->removeUser(_clients[id]->getName());
-				_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
+				_channels[j]->removeOperator(_clients[id]->getName());
+				if (!_channels[j]->getChannelSize())
+					_channels.erase(_channels.begin() + j);
+				else
+					_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
 				break ;
 			}
 		}
@@ -642,6 +647,19 @@ void Server::list_channels(std::vector<std::string> msg, int id)
 // QUIT <quit message>
 void Server::quit(std::string msg, int id)
 {
+	// remove user from channels
+	std::vector<std::string> channelstoleave = _clients[id]->get_channelNames();
+	
+	for (size_t i = 0; i < channelstoleave.size(); i++)
+	{
+		_channels[getChannelId(channelstoleave[i])]->removeUser(_clients[id]->getName());
+		_channels[getChannelId(channelstoleave[i])]->removeOperator(_clients[id]->getName());
+		if (!_channels[getChannelId(channelstoleave[i])]->getChannelSize())
+			_channels.erase(_channels.begin() + getChannelId(channelstoleave[i]));
+		else
+			_channels[getChannelId(channelstoleave[i])]->sendMessage(_clients[id]->getName(), " left the channel\n");
+	}
+
     if (!msg.empty())
         std::cout << "disconnexion :" << msg << std::endl;
     else
@@ -661,11 +679,11 @@ void Server::quit(std::string msg, int id)
 void Server::process_commands(std::string input, int id)
 {
 	std::string str(input);
-	std::string cmd[11] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "WHO"};
+	std::string cmd[12] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "WHO", "CAP"};
     std::vector<std::string> msg = splitString(str, ' ', ':');
 
     size_t i = 0;
-    while (i < 10 && cmd[i].compare(msg[0]))
+    while (i < 11 && cmd[i].compare(msg[0]))
 	{
         ++i;
 	}
@@ -703,6 +721,8 @@ void Server::process_commands(std::string input, int id)
             list_channels(msg, id);
 			break ;
         case 9: // WHO silenced
+			break ;
+        case 10: // CAP silenced
 			break ;
         default:
             print_error_message(COMMAND_NOT_FOUND, _clients[id]->getFd());
