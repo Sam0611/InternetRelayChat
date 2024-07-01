@@ -6,7 +6,7 @@
 /*   By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/26 17:23:23 by sbeaucie          #+#    #+#             */
-/*   Updated: 2024/07/01 15:40:38 by sbeaucie         ###   ########.fr       */
+/*   Updated: 2024/07/01 17:32:23 by sbeaucie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 #include <cstdlib> // exit
 #include <unistd.h> // close
 #include <csignal>
-#include <cstdio>   // For popen, fgets, pclose
+#include <fstream>
 
 int		sockfd;
 bool	isquit = false;
@@ -115,12 +115,12 @@ void	IrcBot::run()
 		int msgLen = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
 		if (msgLen < 0)
 		{
-			std::cerr << "Error: recv() failed" << std::endl;
+			std::cerr << ERROR << "Error: recv() failed" << RESET << std::endl;
 			break ;
 		}
 		buffer[msgLen] = '\0';
 		std::string msg(buffer);
-        std::cout << msg << std::endl;
+        std::cout << GREEN << "RECEIVED: " << RESET << msg << std::endl;
 
 		handleMessage(msg);
 	}
@@ -129,18 +129,19 @@ void	IrcBot::run()
 void	IrcBot::sendMessage(const std::string &target, const std::string &msg)
 {
 	std::string message = "PRIVMSG " + target + " :" + msg + "\r\n";
+	std::cout << BLUE << "SEND: " << RESET << message << std::endl;
 	send(sockfd, message.c_str(), message.size(), 0);
 }
 
 void	IrcBot::handleCommand(const std::string &user, const std::string &cmd)
 {
-    std::string cleanedCmd = cmd;
-    if (cleanedCmd.size() >= 2 && cleanedCmd.substr(cleanedCmd.size() - 2) == "\r\n") {
-        cleanedCmd = cleanedCmd.substr(0, cleanedCmd.size() - 2);
-    }
+	std::string cleanedCmd = cmd;
+	if (cleanedCmd.size() >= 2 && cleanedCmd.substr(cleanedCmd.size() - 2) == "\r\n") {
+		cleanedCmd = cleanedCmd.substr(0, cleanedCmd.size() - 2);
+	}
 
 	if (cleanedCmd == "!hello") {
-		sendMessage(user, "Bip Boup !");
+		sendMessage(user, "Hello ! How can i help you ?");
 	}
 	else if (cleanedCmd == "!time")
 	{
@@ -148,26 +149,26 @@ void	IrcBot::handleCommand(const std::string &user, const std::string &cmd)
 		char *dt = ctime(&now);
 		sendMessage(user, std::string("Current time: ") + dt);
 	}
-    else if (cleanedCmd == "!deepl help")
-    {
-        std::string languages = "Supported languages: DE, EN-GB, EN-US, BG, ZH, HR, DA, ES, ET, FI, FR, EL, HU, ID, IT, JA, LT, LV, NL, PL, PT-BR, PT-PT, RO, RU, SK, SL, SV, CS, TR, UK";
-        sendMessage(user, languages);
-    }
-    else if (cleanedCmd.rfind("!deepl", 0) == 0)
-    {
-        std::vector<std::string> tokens = splitMessage(cleanedCmd, ' ');
-        if (tokens.size() >= 3)
-        {
-            std::string targetLang = tokens[1];
-            std::string text = cleanedCmd.substr(cleanedCmd.find(tokens[2]));
-            std::string translatedText = translateText(text, targetLang);
-            sendMessage(user, translatedText);
-        }
-        else
-        {
-            sendMessage(user, "Usage: !deepl <target_language> <text>");
-        }
-    }
+	else if (cleanedCmd == "!deepl help")
+	{
+		std::string languages = "Supported languages: DE, EN-GB, EN-US, BG, ZH, HR, DA, ES, ET, FI, FR, EL, HU, ID, IT, JA, LT, LV, NL, PL, PT-BR, PT-PT, RO, RU, SK, SL, SV, CS, TR, UK";
+		sendMessage(user, languages);
+	}
+	else if (cleanedCmd.rfind("!deepl", 0) == 0)
+	{
+		std::vector<std::string> tokens = splitMessage(cleanedCmd, ' ');
+		if (tokens.size() >= 3)
+		{
+			std::string targetLang = tokens[1];
+			std::string text = cleanedCmd.substr(cleanedCmd.find(tokens[2]));
+			std::string translatedText = translateText(text, targetLang);
+			sendMessage(user, translatedText);
+		}
+		else
+		{
+			sendMessage(user, "Usage: !deepl <target_language> <text>");
+		}
+	}
 }
 
 void IrcBot::handleMessage(const std::string &msg)
@@ -203,38 +204,35 @@ std::vector<std::string> IrcBot::splitMessage(const std::string &message, char d
 	return (tokens);
 }
 
-
-/*
-    The popen() (process open) function is used to execute a command in a child process and open a communication flow with that process.
-    The fgets() function reads a line of characters from a stream and stores it as a string.
-*/
 std::string IrcBot::translateText(const std::string &text, const std::string &targetLang)
 {
-    std::string command = "python3 translate.py \"" + text + "\" " + targetLang;
-    std::string result;
-    char buffer[128];
+	std::string command = "python3 translate.py \"" + text + "\" " + targetLang + " > tmp_output.txt";
+	std::string result;
 
-    // Open a reading process by executing the command
-    FILE* pipe = popen(command.c_str(), "r");
-    if (!pipe) {
-		throw PipeErrorException();
+	int rcode = system(command.c_str());
+	if (rcode != 0)
+		throw TranslationException();
+
+	std::ifstream file("tmp_output.txt");
+	if (file.is_open())
+	{
+		std::string line;
+		if (getline(file, line)) {
+			result += line;
+		}
+		file.close();
 	}
-    try {
-		// reads the process output line by line into the buffer.
-        while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
-            result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw TranslationException();
-    }
-    // Close process
-    pclose(pipe);
-    // Remove newline character from the end of result
-    if (!result.empty() && result[result.size() - 1] == '\n') {
-        result.erase(result.size() - 1);
-    }
-    return (result);
+	else
+	{
+		throw TranslationException();
+	}
+
+	remove("tmp_output.txt");
+	// Remove newline character from the end of result
+	if (!result.empty() && result[result.size() - 1] == '\n') {
+		result.erase(result.size() - 1);
+	}
+	return (result);
 }
 
 /*
@@ -249,9 +247,6 @@ const char* IrcBot::AdressConversionExeption::what() const throw() {
 }
 const char* IrcBot::ConnectionFailedException::what() const throw() {
 	return ("Error: Failed to connect to the server.");
-}
-const char* IrcBot::PipeErrorException::what() const throw() {
-    return ("Error: Pipe operation failed.");
 }
 const char* IrcBot::TranslationException::what() const throw() {
     return ("Error: Translation failed.");
