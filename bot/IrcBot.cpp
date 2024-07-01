@@ -203,67 +203,37 @@ std::vector<std::string> IrcBot::splitMessage(const std::string &message, char d
 	return (tokens);
 }
 
-/*
-    Callback function for writing received data into a string buffer.
-    contents: A pointer to the data received. cURL passes the data it receives via this pointer.
-    size: The size of a data block.
-    nmemb: The number of data blocks.
-    userp: Used to pass a pointer to a string where the data will be stored.
-*/
-size_t  WriteCallBack(void *contents, size_t size, size_t nmemb, void *userp)
-{
-    // Append the received data to the string buffer
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return (size * nmemb); // Return the number of bytes processed
-}
 
+/*
+    The popen() (process open) function is used to execute a command in a child process and open a communication flow with that process.
+    The fgets() function reads a line of characters from a stream and stores it as a string.
+*/
 std::string IrcBot::translateText(const std::string &text, const std::string &targetLang)
 {
-    CURL        *curl; // Pointer to a CURL object.
-    CURLcode    res; // To store the cURL return code.
-    std::string readBuffer; // To hold the response from the API.
+    std::string command = "python3 translate.py \"" + text + "\" " + targetLang + " 2>/dev/null";
+    std::string result;
+    char buffer[128];
 
-    // Initialize global cURL environment
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    // Initialize a cURL session
-    curl = curl_easy_init();
-
-    if (curl)
-    {
-        std::string apiUrl = "https://api-free.deepl.com/v2/translate";
-        std::string apiKey = "59933f40-dc29-4c7c-b9a6-bce777bf4963:fx";
-        // Construct POST data with escaped text and target language
-        std::string postFields = "auth_key=" + apiKey + "&text=" + curl_easy_escape(curl, text.c_str(), text.length()) + "&target_lang=" + targetLang;
-
-        // Set the URL for the cURL session
-        curl_easy_setopt(curl, CURLOPT_URL, apiUrl.c_str());
-        // Set the POST data for the request
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postFields.c_str());
-        // Set the callback function for writing the response data
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallBack);
-        // Set the user data for the write callback (the readBuffer string)
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-        // Perform request
-        res = curl_easy_perform(curl);
-        if (res != CURLE_OK)
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
-
-        curl_easy_cleanup(curl);
+    // Open a reading process by executing the command
+    FILE* pipe = popen(command.c_str(), "r");
+    if (!pipe)
+        throw PipeErrorException();
+    try {
+        // Read process output to the end
+        while (fgets(buffer, sizeof buffer, pipe) != NULL) { // reads the process output line by line into the buffer.
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw TranslationException();
     }
-    curl_global_cleanup();
-
-    // Extract the translated text from JSON response
-    size_t pos = readBuffer.find("\"text\":\"");
-    if (pos != std::string::npos)
-    {
-        pos += 8; // Skip the "\"text\":\"" part
-        size_t endPos = readBuffer.find("\"", pos);
-        if (endPos != std::string::npos)
-            return (readBuffer.substr(pos, endPos - pos)); // Return the translated text
+    // Close process
+    pclose(pipe);
+    // Remove newline character from the end of result
+    if (!result.empty() && result[result.size() - 1] == '\n') {
+        result.erase(result.size() - 1);
     }
-
-    return ("Translation failed");
+    return (result);
 }
 
 /*
@@ -278,4 +248,10 @@ const char* IrcBot::AdressConversionExeption::what() const throw() {
 }
 const char* IrcBot::ConnectionFailedException::what() const throw() {
 	return ("Error: Failed to connect to the server.");
+}
+const char* IrcBot::PipeErrorException::what() const throw() {
+    return ("Error: Pipe operation failed.");
+}
+const char* IrcBot::TranslationException::what() const throw() {
+    return ("Error: Translation failed.");
 }

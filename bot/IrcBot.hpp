@@ -53,6 +53,14 @@ public:
     class ConnectionFailedException : public std::exception {
         const char *what() const throw();
     };
+    class PipeErrorException : public std::exception
+    {
+        const char *what() const throw();
+    };
+    class TranslationException : public std::exception
+    {
+        const char *what() const throw();
+    };
 
 };
 
