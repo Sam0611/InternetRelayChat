@@ -29,6 +29,7 @@
 #include <poll.h> // poll
 #include <cstdlib> //strtol
 #include <csignal> //signal
+#include <fcntl.h> //fcntl
 
 
 /*      DEFINE          */
