@@ -6,7 +6,7 @@
 /*   By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/26 17:23:23 by sbeaucie          #+#    #+#             */
-/*   Updated: 2024/06/26 19:18:07 by sbeaucie         ###   ########.fr       */
+/*   Updated: 2024/07/01 15:40:38 by sbeaucie         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@
 #include <cstdlib> // exit
 #include <unistd.h> // close
 #include <csignal>
-#include <curl/curl.h>
+#include <cstdio>   // For popen, fgets, pclose
 
 int		sockfd;
 bool	isquit = false;
@@ -138,7 +138,7 @@ void	IrcBot::handleCommand(const std::string &user, const std::string &cmd)
     if (cleanedCmd.size() >= 2 && cleanedCmd.substr(cleanedCmd.size() - 2) == "\r\n") {
         cleanedCmd = cleanedCmd.substr(0, cleanedCmd.size() - 2);
     }
-    
+
 	if (cleanedCmd == "!hello") {
 		sendMessage(user, "Bip Boup !");
 	}
@@ -210,17 +210,18 @@ std::vector<std::string> IrcBot::splitMessage(const std::string &message, char d
 */
 std::string IrcBot::translateText(const std::string &text, const std::string &targetLang)
 {
-    std::string command = "python3 translate.py \"" + text + "\" " + targetLang + " 2>/dev/null";
+    std::string command = "python3 translate.py \"" + text + "\" " + targetLang;
     std::string result;
     char buffer[128];
 
     // Open a reading process by executing the command
     FILE* pipe = popen(command.c_str(), "r");
-    if (!pipe)
-        throw PipeErrorException();
+    if (!pipe) {
+		throw PipeErrorException();
+	}
     try {
-        // Read process output to the end
-        while (fgets(buffer, sizeof buffer, pipe) != NULL) { // reads the process output line by line into the buffer.
+		// reads the process output line by line into the buffer.
+        while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
             result += buffer;
         }
     } catch (...) {

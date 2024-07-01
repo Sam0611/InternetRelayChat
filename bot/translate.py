@@ -12,3 +12,11 @@ def translate_text(text, target_lang):
     response = requests.post(url, data=params)
     result = response.json()
     return result["translations"][0]["text"]
+
+if len(sys.argv) != 3:
+	print("Invalid translation - type !deepl help")
+	sys.exit(0)
+try:
+	print(translate_text(sys.argv[1], sys.argv[2]))
+except:
+	print("Invalid translation - type !deepl help")

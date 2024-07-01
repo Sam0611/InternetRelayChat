@@ -6,7 +6,7 @@
 #    By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/10/17 01:45:34 by sbeaucie          #+#    #+#              #
-#    Updated: 2023/10/17 01:45:34 by sbeaucie         ###   ########.fr        #
+#    Updated: 2024/07/01 15:30:44 by sbeaucie         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -36,7 +36,7 @@ $(OBJ_DIR)%.o: %.cpp
 	@echo -n "\e[1;42m \e[0;m"
 
 $(NAME): $(OBJ_DIR) $(OBJ)
-	@$(CC) $(FLAGS) $(OBJ) -o $(NAME) -lcurl
+	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
 	@echo -n "\e[1;32m [Compiled]\e[0;m\n"
 
 $(OBJ_DIR):
