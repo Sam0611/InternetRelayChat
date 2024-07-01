@@ -113,7 +113,7 @@ void	IrcBot::run()
 		if (isquit)
 			break ;
 		int msgLen = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
-		if (msgLen < 0)
+		if (msgLen <= 0)
 		{
 			std::cerr << ERROR << "Error: recv() failed" << RESET << std::endl;
 			break ;

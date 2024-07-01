@@ -22,7 +22,6 @@ class Server
 {
     private:
         Server();
-        std::string             _host;
         struct pollfd           _fds[MAX_CONNEXION];
         int                     _nfds;
         const std::string       _password;

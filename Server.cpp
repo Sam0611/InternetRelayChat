@@ -13,11 +13,10 @@
 #include <arpa/inet.h> // inet_addr
 #include "Server.hpp"
 
-// verif if this the goods values [to do]
 #define VALID_PORT_MIN 1024
 #define VALID_PORT_MAX 65535
 
-Server::Server(std::string password) : _host("127.0.0.1"), _password(password), _port(-1), _socket(-1)
+Server::Server(std::string password) : _password(password), _port(-1), _socket(-1)
 {
 }
 
@@ -56,18 +55,15 @@ int Server::createServer(char *input)
 
 	sockaddr_in addr;
 	addr.sin_addr.s_addr = INADDR_ANY; // any IPv4 local host address
-    // addr.sin_addr.s_addr = inet_addr(_host.c_str());
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(_port);
 
-	// casting en C++ avec <reinterpret_cast> ou autre
 	if (bind(_socket, (struct sockaddr*)&addr, sizeof(addr)) == ERROR)
 	{
         std::cerr << RED << "Error: Couldn't bind socket" << RESET << std::endl;
 		return (ERROR);
 	}
 
-	// non bloquante
 	if (listen(_socket, SOMAXCONN) == ERROR)
 	{
         std::cerr << RED << "Error: listen failed" << RESET << std::endl;
