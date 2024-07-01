@@ -28,6 +28,10 @@ void Client::check_password_input(std::string input, std::string password)
 {
     std::vector<std::string> msg = splitString(input, ' ');
 
+    // silence CAP
+    if (!msg[0].compare("CAP"))
+        return;
+
     if (msg[0].compare("PASS"))
     {
         print_error_message(PASSWORD_MISSMATCH, _fd);

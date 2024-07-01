@@ -281,6 +281,20 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 				continue ;
 			}
 
+			// check if already in the channel
+			if (_channels[j]->isMember(_clients[id]->getName()))
+			{
+				message = ":";
+				message.append(SERVER);
+				message.append(" 443 ");
+				message.append(_clients[id]->getName());
+				message.append(" ");
+				message.append(channelNames[i]);
+				message.append(" :is already on channel\r\n");
+				send(_clients[id]->getFd(), message.c_str(), message.length(), 0);
+				continue;
+			}
+
 			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
 		}
 
@@ -679,11 +693,11 @@ void Server::quit(std::string msg, int id)
 void Server::process_commands(std::string input, int id)
 {
 	std::string str(input);
-	std::string cmd[12] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "WHO", "CAP"};
+	std::string cmd[12] = {"PRIVMSG", "JOIN", "PART", "TOPIC", "INVITE", "KICK", "MODE", "QUIT", "LIST", "WHO"};
     std::vector<std::string> msg = splitString(str, ' ', ':');
 
     size_t i = 0;
-    while (i < 11 && cmd[i].compare(msg[0]))
+    while (i < 10 && cmd[i].compare(msg[0]))
 	{
         ++i;
 	}
@@ -721,8 +735,6 @@ void Server::process_commands(std::string input, int id)
             list_channels(msg, id);
 			break ;
         case 9: // WHO silenced
-			break ;
-        case 10: // CAP silenced
 			break ;
         default:
             print_error_message(COMMAND_NOT_FOUND, _clients[id]->getFd());
