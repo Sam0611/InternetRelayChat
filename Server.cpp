@@ -353,7 +353,10 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 				_channels[j]->removeUser(_clients[id]->getName());
 				_channels[j]->removeOperator(_clients[id]->getName());
 				if (!_channels[j]->getChannelSize())
+				{
+					delete _channels[j];
 					_channels.erase(_channels.begin() + j);
+				}
 				else
 					_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
 				break ;
@@ -672,15 +675,18 @@ void Server::quit(std::string msg, int id)
 {
 	// remove user from channels
 	std::vector<std::string> channelstoleave = _clients[id]->get_channelNames();
-	
 	for (size_t i = 0; i < channelstoleave.size(); i++)
 	{
-		_channels[getChannelId(channelstoleave[i])]->removeUser(_clients[id]->getName());
-		_channels[getChannelId(channelstoleave[i])]->removeOperator(_clients[id]->getName());
-		if (!_channels[getChannelId(channelstoleave[i])]->getChannelSize())
-			_channels.erase(_channels.begin() + getChannelId(channelstoleave[i]));
+		size_t j = getChannelId(channelstoleave[i]);
+		_channels[j]->removeUser(_clients[id]->getName());
+		_channels[j]->removeOperator(_clients[id]->getName());
+		if (!_channels[j]->getChannelSize())
+		{
+			delete _channels[j];
+			_channels.erase(_channels.begin() + j);
+		}
 		else
-			_channels[getChannelId(channelstoleave[i])]->sendMessage(_clients[id]->getName(), " left the channel\n");
+			_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
 	}
 
     if (!msg.empty())
