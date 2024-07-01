@@ -200,9 +200,6 @@ void Channel::changeMode(bool activate, char mode)
 // +l
 void Channel::changeMode(char mode, size_t len, Client *client, std::string len_str)
 {
-    if (getMode(mode))
-        return;
-
     if (len <= 0)
     {
         print_error_message(LIMIT_TOO_SMALL, client->getFd());

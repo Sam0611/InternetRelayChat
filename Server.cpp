@@ -603,7 +603,6 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 				print_error_message(INVALID_FORMAT, _clients[id]->getFd());
 				return ;
 			}
-			std::cerr << len << std::endl; // to del
 		}
 
 		if (_channels[i]->needArgMode(activate, msg[1][j]))
