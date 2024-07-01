@@ -44,8 +44,6 @@ void Client::check_password_input(std::string input, std::string password)
         return;
     }
 
-    std::cerr << "mdp = " << msg[1] << std::endl;
-
     if (!msg[msg.size() -1].compare(password))
         pass_set = true;
     else
@@ -89,7 +87,6 @@ void Client::set_nickname(std::vector<std::string> msg, std::vector<Client *> cl
 
     _name = msg[1];
     nick_set = true;
-    std::cerr << "nickname entered" << std::endl; // bigboss test a suppr
 }
 
 void Client::set_usernames(std::vector<std::string> msg)
@@ -109,7 +106,6 @@ void Client::set_usernames(std::vector<std::string> msg)
     for (size_t i = 1; i < msg.size(); i++)
         _username.push_back(msg[i]);
     user_set = true;
-    std::cerr << "username entered" << std::endl; // bigboss test a suppr
 }
 
 // PASS / NICK / USER

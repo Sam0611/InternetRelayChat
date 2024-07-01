@@ -123,7 +123,7 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 	// get receivers separated by commas
 	std::vector<std::string> receivers = splitString(msg[0], ',');
 
-	// suppr duplicates
+	// delete duplicates
 	for (size_t i = 0; i < receivers.size() - 1; i++)
 	{
 		for (size_t j = i + 1; j < receivers.size(); j++)
@@ -144,7 +144,7 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			// check sender is in it
 			if (!_clients[id]->isInChannel(receivers[i]))
 			{
-				std::cerr << RED << "'" << receivers[i] << "' not joined" << RESET << std::endl;
+				print_error_message(NO_SUCH_NICK, _clients[id]->getFd());
 				continue ;
 			}
 
@@ -168,7 +168,6 @@ void Server::send_private_message(std::vector<std::string> msg, int id)
 			int destfd = getFdByName(receivers[i]);
 			if (destfd == ERROR) // if username not found
 			{
-				std::cerr << RED << "'" << receivers[i] << "' not found" << RESET << std::endl;
 				print_error_message(NO_SUCH_NICK, _clients[id]->getFd());
 				continue ;
 			}
@@ -304,7 +303,7 @@ void Server::join_channel(std::vector<std::string> msg, int id)
 			_channels[j]->addUser(_clients[id]->getName(), _clients[id]->getFd());
 		}
 
-		_channels[j]->joinChannelMessage(_clients[id]->getFd(), _clients[id]->getName()); //messages when first connecting to channel
+		_channels[j]->joinChannelMessage(_clients[id]->getFd(), _clients[id]->getName()); // messages when first connecting to channel
 		rpl_topic(_clients[id], _channels[j]);
 		rpl_namereply(_clients[id], _channels[j]);
 		rpl_endofnames(_clients[id], _channels[j]);
@@ -477,7 +476,7 @@ void Server::kick_from_channel(std::vector<std::string> msg, int id)
 	_channels[i]->removeUser(_clients[j]->getName());
 }
 
-// INVITE acomet #chan //he is a bigoss
+// INVITE acomet #chan
 // There is no requirement that the channel the target user is being invited to must exist or be a valid channel
 void Server::invite_to_channel(std::vector<std::string> msg, int id)
 {
@@ -508,7 +507,7 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	_clients[j]->saveInvite(msg[1]);
 
 	// send rpl_invite and invite message to the invited
-	rpl_inviting(_clients[id], _clients[j], _channels[getChannelId(msg[1])]);
+	rpl_inviting(_clients[id], _clients[j], msg[1]);
 	std::string inviteMessage = ":";
 	inviteMessage.append(_clients[id]->getName());
 	inviteMessage.append(" INVITE ");
@@ -516,7 +515,12 @@ void Server::invite_to_channel(std::vector<std::string> msg, int id)
 	inviteMessage.append(" :");
 	inviteMessage.append(msg[1]);
 	inviteMessage.append("\r\n");
-	_channels[getChannelId(msg[1])]->sendMessageloopExcept(inviteMessage, _clients[id]->getName());
+
+	// if channel exists notify everyone in channel someone has been invited
+	if (i != _channels.size())
+		_channels[i]->sendMessageloopExcept(inviteMessage, _clients[id]->getName());
+
+	// send message to the invited
 	send(_clients[j]->getFd(), inviteMessage.c_str(), inviteMessage.length(), 0);
 }
 
@@ -543,7 +547,6 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 	// show channel modes
 	if (msg.size() == 1)
     {
-        // _channels[i]->showModes();
         std::string message = ":";
         message.append(SERVER);
         message.append(" 324 ");
@@ -595,11 +598,12 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 			}
 			std::istringstream ss(msg[2 + argModes]);
 			ss >> len;
-			if (ss.fail() || !ss.eof())
+			if (msg[2 + argModes][0] == '-' || ss.fail() || !ss.eof())
 			{
 				print_error_message(INVALID_FORMAT, _clients[id]->getFd());
 				return ;
 			}
+			std::cerr << len << std::endl; // to del
 		}
 
 		if (_channels[i]->needArgMode(activate, msg[1][j]))
@@ -829,9 +833,7 @@ int Server::startServer(void)
 				continue ;
 			}
 			
-			//test bigboss pour trunc
 			int msglen = recv(_fds[i].fd, buffer, sizeof(buffer), 0);
-			std::cerr << "msglen = " << msglen << std::endl;
 			if (msglen == ERROR)
 			{
 				std::cerr << RED << "Error: recv failed" << RESET << std::endl;
@@ -844,9 +846,6 @@ int Server::startServer(void)
 				continue ;
 			}
 
-				//bigboss test
-			std::cerr << "test : " << buffer << std::endl;
-
 			// seperate multiples commands from one buffer
 			std::vector<std::string> cmds = splitString(buffer, '\n');
 
@@ -855,9 +854,9 @@ int Server::startServer(void)
 			{
 				//removing '\r'
 				if (cmds[k][cmds[k].size() -1] == '\r')
-					cmds[k].erase(cmds[k].size() - 1); // remove \n at the end
+					cmds[k].erase(cmds[k].size() - 1);
 
-				if (!_clients[i - FIRST_CLIENT]->pass_set)// process PASS
+				if (!_clients[i - FIRST_CLIENT]->pass_set) // process PASS
 					_clients[i - FIRST_CLIENT]->check_password_input(cmds[k], _password);
 				else if (!_clients[i - FIRST_CLIENT]->nick_set || !_clients[i -FIRST_CLIENT]->user_set) // process NICK / USER
 				{
@@ -867,8 +866,7 @@ int Server::startServer(void)
 				}
 				else
 				{
-					std::cout << "Received : " << buffer;
-					// process IRC commands
+					std::cout << buffer;
 					process_commands(cmds[k].c_str(), i - FIRST_CLIENT);
 				}
 			}

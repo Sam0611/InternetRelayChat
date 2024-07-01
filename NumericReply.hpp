@@ -7,7 +7,7 @@ void    rpl_welcome(Client *client);
 void    rpl_topic(Client *client, Channel *channel);
 void    rpl_namereply(Client *client, Channel *channel);
 void    rpl_endofnames(Client *client, Channel *channel);
-void    rpl_inviting(Client *client1, Client *client2, Channel *channel);
+void    rpl_inviting(Client *client1, Client *client2, std::string channel_name);
 void    err_NEEDMOREPARAMS(int fd, std::string command);
 void    err_passwdmismatch(int fd);
 

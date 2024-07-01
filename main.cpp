@@ -30,6 +30,13 @@ int	main(int ac, char **av)
 
 	std::string password(av[2]);
 
+	// check for forbidden chars (space)
+	if (password.find(' ') != std::string::npos)
+	{
+        std::cerr << RED << "Error: password contains forbidden characters" << RESET << std::endl;
+		return (1);
+	}
+
 	Server server(password);
 
 	if (!is_only_numbers(av[1]))

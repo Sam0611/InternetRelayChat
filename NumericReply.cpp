@@ -2,7 +2,7 @@
 
 void    rpl_welcome(Client *client)
 {
-    //Welcome new user
+    // Welcome new user
     std::string message;
 
     message = ":";
@@ -21,7 +21,7 @@ void    rpl_welcome(Client *client)
 
 void    rpl_topic(Client *client, Channel *channel)
 {
-    //display Topic
+    // display Topic
     std::string message;
 
     message = ":";
@@ -47,9 +47,7 @@ void    rpl_topic(Client *client, Channel *channel)
 
 void    rpl_namereply(Client *client, Channel *channel)
 {
-    //members message
-    //S <-   :irc.example.com 353 dan = #test :@dan
-    //S <-   :irc.example.com 366 dan #test :End of /NAMES list.
+    // members message
     std::string message;
 
     message = ":";
@@ -89,7 +87,7 @@ void    rpl_endofnames(Client *client, Channel *channel)
     send(client->getFd(), message.c_str(), message.length(), 0);
 }
 
-void    rpl_inviting(Client *client1, Client *client2, Channel *channel)
+void    rpl_inviting(Client *client1, Client *client2, std::string channel_name)
 {
     std::string message;
 
@@ -102,7 +100,7 @@ void    rpl_inviting(Client *client1, Client *client2, Channel *channel)
     message.append(" ");
     message.append(client2->getName());
     message.append(" ");
-    message.append(channel->getName());
+    message.append(channel_name);
     message.append("\r\n");
     send(client1->getFd(), message.c_str(), message.length(), 0);
 }

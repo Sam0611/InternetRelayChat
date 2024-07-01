@@ -91,7 +91,7 @@ void Channel::removeOperator(std::string name)
 
 void Channel::sendMessage(std::string name, std::string content)
 {
-    //format message channel
+    // format message channel
     std::string message = ":";
     message.append(name);
     message.append(" PRIVMSG ");
@@ -113,7 +113,7 @@ void Channel::sendMessage(std::string name, std::string content)
 
 void Channel::joinChannelMessage(int fd, std::string name)
 {
-    //entered message
+    // entered message
     std::string message = ":";
     message.append(name);
     message.append(" JOIN ");
@@ -237,7 +237,7 @@ void Channel::changeMode(bool activate, char mode, std::string pass)
     _mode[mode] = true;
     _password = pass;
 
-    //server response
+    // server response
     std::string message = ":";
     message.append(SERVER);
     message.append(" MODE ");
