@@ -6,7 +6,7 @@
 #    By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/10/17 01:45:34 by sbeaucie          #+#    #+#              #
-#    Updated: 2023/10/17 01:45:34 by sbeaucie         ###   ########.fr        #
+#    Updated: 2024/07/01 15:30:44 by sbeaucie         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,19 +37,17 @@ $(OBJ_DIR)%.o: %.cpp
 
 $(NAME): $(OBJ_DIR) $(OBJ)
 	@$(CC) $(FLAGS) $(OBJ) -o $(NAME)
-	@echo -n "\e[1;32m [Compiled]\e[0;m\n"
+	@echo -n "\e[1;32m [Bonus Compiled]\e[0;m\n"
 
 $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
 
 clean:
 	@rm -f $(OBJ)
-	@echo -n "\e[1;33m[Cleaned] \e[0;m"
 
 fclean: clean
 	@rm -f $(NAME)
 	@rm -rf $(OBJ_DIR)
-	@echo -n "\e[1;31m+ [fCleaned] \e[0;m\n"
 
 re: fclean all
 

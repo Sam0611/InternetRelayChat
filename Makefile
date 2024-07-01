@@ -45,16 +45,21 @@ $(NAME): $(OBJ_DIR) $(OBJ)
 
 $(OBJ_DIR):
 	@mkdir -p $(OBJ_DIR)
+	
+bonus:
+	@make --no-print-directory -C ./bot
 
 clean:
 	@rm -f $(OBJ)
 	@echo -n "\e[1;33m[Cleaned] \e[0;m"
+	@make clean --no-print-directory -C ./bot
 
 fclean: clean
 	@rm -f $(NAME)
 	@rm -rf $(OBJ_DIR)
 	@echo -n "\e[1;31m+ [fCleaned] \e[0;m\n"
+	@make fclean --no-print-directory -C ./bot
 
 re: fclean all
 
-.PHONY: all clean fclean re
+.PHONY: all clean fclean re bonus

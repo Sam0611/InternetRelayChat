@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.cpp                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: sbeaucie <sbeaucie@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/26 17:23:34 by sbeaucie          #+#    #+#             */
+/*   Updated: 2024/06/26 17:24:00 by sbeaucie         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "IrcBot.hpp"
 #include <iostream>
 #include <cstdlib>
@@ -17,7 +29,7 @@ int main(int ac, char **av)
 
         IrcBot bot(server, port, password);
         bot.connect();
-        bot.joinChannel("#r2d3");
+        bot.joinChannel("#c2po");
         bot.run();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
