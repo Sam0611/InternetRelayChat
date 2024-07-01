@@ -48,6 +48,12 @@ int Server::createServer(char *input)
 		return (ERROR);
 	}
 
+	if (fcntl(_socket, F_SETFL, O_NONBLOCK) == ERROR)
+	{
+        std::cerr << RED << "Error: fcntl failed" << RESET << std::endl;
+		return (ERROR);
+	}
+
 	sockaddr_in addr;
 	addr.sin_addr.s_addr = INADDR_ANY; // any IPv4 local host address
     // addr.sin_addr.s_addr = inet_addr(_host.c_str());
