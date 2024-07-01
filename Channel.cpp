@@ -51,9 +51,6 @@ void Channel::addUser(std::string name, int fd)
         return ;
     }
 
-    // add user to channel
-    _users.insert(std::pair<std::string, int>(name, fd));
-
     // format join notif message
     std::string message = ":";
     message.append(name);
@@ -68,6 +65,9 @@ void Channel::addUser(std::string name, int fd)
     {
         send(it->second, message.c_str(), message.length(), 0);
     }
+
+    // add user to channel
+    _users.insert(std::pair<std::string, int>(name, fd));
 }
 
 void Channel::removeUser(std::string name)
@@ -254,6 +254,13 @@ void Channel::changeMode(bool activate, char mode, std::string pass)
 // o
 void Channel::changeOperator(bool activate, std::string name)
 {
+	// check if new operator is member (+o)
+	if (!isMember(name))
+	{
+		std::cerr << RED << "Not a member of channel" << RESET << std::endl;
+		return ;
+	}
+
     std::vector<std::string>::iterator it = std::find(_operator.begin(), _operator.end(), name);
     std::string message = ":";
     message.append(SERVER);

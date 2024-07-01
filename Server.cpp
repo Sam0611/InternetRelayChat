@@ -397,8 +397,8 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
         return ;
     }
 
-	// change topic if is operator
-	if (!_channels[i]->isOperator(_clients[id]->getName()))
+	// change topic if is operator or mode = -t
+	if (!_channels[i]->isOperator(_clients[id]->getName()) && _channels[i]->getMode('t'))
 	{
         print_error_message(PERM_DENIED, _clients[id]->getFd());
 		return;
@@ -632,8 +632,7 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 				_channels[i]->changeMode(activate, msg[1][j], msg[2]);
 			else // +o
 			{
-				size_t opId = getClientId(msg[2]);
-				if (opId != _clients.size())
+				if (getClientId(msg[2]) != _clients.size())
 					_channels[i]->changeOperator(activate, msg[2]);
 			}
 			msg.erase(msg.begin() + 2);
