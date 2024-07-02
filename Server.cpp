@@ -354,7 +354,7 @@ void Server::leave_channel(std::vector<std::string> msg, int id)
 					_channels.erase(_channels.begin() + j);
 				}
 				else
-					_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
+					_channels[j]->sendMessageloop(message);
 				break ;
 			}
 		}
@@ -402,10 +402,10 @@ void Server::view_or_change_topic(std::vector<std::string> msg, int id)
 	_channels[i]->setTopic(_clients[id]->getName(), msg[1]);
 	std::string message = ":";
 	message.append(_clients[id]->getName());
-	message.append(" PRIVMSG ");
+	message.append(" TOPIC ");
 	message.append(_channels[i]->getName());
-	message.append(" changed topic : ");
-	message.append(msg[1].substr(1));
+	message.append(" ");
+	message.append(msg[1]);
 	message.append("\r\n");
 	_channels[i]->sendMessageloop(message);
 }
