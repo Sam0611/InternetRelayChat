@@ -626,15 +626,13 @@ void Server::change_mode(std::vector<std::string> msg, int id)
 				_channels[i]->changeMode(msg[1][j], len, _clients[id], msg[2]);
 			else if (msg[1][j] == 'k')
 				_channels[i]->changeMode(activate, msg[1][j], msg[2]);
-			else // +o
+			else // o
 			{
 				if (getClientId(msg[2]) != _clients.size())
 					_channels[i]->changeOperator(activate, msg[2]);
 			}
 			msg.erase(msg.begin() + 2);
 		}
-		else if (msg[1][j] == 'o') // -o
-			_channels[i]->changeOperator(activate, _clients[id]->getName());
 		else
 			_channels[i]->changeMode(activate, msg[1][j]);
     }
@@ -684,10 +682,12 @@ void Server::quit(std::string msg, int id)
 			_channels[j]->sendMessage(_clients[id]->getName(), " left the channel\n");
 	}
 
+	std::cout << _clients[id]->getName() << " disconnected";
     if (!msg.empty())
-        std::cout << "disconnexion :" << msg << std::endl;
-    else
-        std::cout << "disconnected" << std::endl;
+	{
+        std::cout << " (" << msg << ")";
+	}
+	std::cout << std::endl;
 
     _nfds--;
     close(_fds[id + FIRST_CLIENT].fd);

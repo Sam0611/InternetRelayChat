@@ -170,7 +170,9 @@ bool Channel::getMode(char mode) // i/t/k/l
 
 bool Channel::needArgMode(bool activate, char mode)
 {
-    if (activate == true && (mode == 'k' || mode == 'l' || mode == 'o'))
+    if (activate == true && (mode == 'k' || mode == 'l'))
+        return (true);
+    if (mode == 'o')
         return (true);
     return (false);
 }
