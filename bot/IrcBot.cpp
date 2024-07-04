@@ -107,29 +107,26 @@ void	quit(int signal)
 void	IrcBot::run()
 {
 	char buffer[BUFFER_SIZE];
-	while (true)
+
+    signal(SIGINT, quit);
+	while (!isquit)
 	{
-		signal(SIGINT, quit);
-		if (isquit)
-			break ;
 		int msgLen = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
 		if (msgLen <= 0)
-		{
-			std::cerr << ERROR << "Error: recv() failed" << RESET << std::endl;
 			break ;
-		}
 		buffer[msgLen] = '\0';
 		std::string msg(buffer);
-        std::cout << GREEN << "RECEIVED: " << RESET << msg << std::endl;
+        std::cout << GREEN << BOLD << "RECEIVED: " << RESET << msg << std::endl;
 
 		handleMessage(msg);
 	}
+    std::cout << RED << BOLD << "QUIT" << RESET << std::endl;
 }
 
 void	IrcBot::sendMessage(const std::string &target, const std::string &msg)
 {
 	std::string message = "PRIVMSG " + target + " :" + msg + "\r\n";
-	std::cout << BLUE << "SEND: " << RESET << message << std::endl;
+	std::cout << BLUE << BOLD << "SEND: " << RESET << message << std::endl;
 	send(sockfd, message.c_str(), message.size(), 0);
 }
 
@@ -204,12 +201,29 @@ std::vector<std::string> IrcBot::splitMessage(const std::string &message, char d
 	return (tokens);
 }
 
-std::string IrcBot::translateText(const std::string &text, const std::string &targetLang)
+std::string escapeText(const std::string& text)
 {
-	std::string command = "python3 translate.py \"" + text + "\" " + targetLang + " > tmp_output.txt";
+    std::string escapedText;
+
+    for (std::string::size_type i = 0; i < text.size(); ++i) {
+        if (text[i] == '"' || text[i] == '`' || text[i] == '$' || text[i] == '\\') {
+            escapedText += '\\';
+        }
+        escapedText += text[i];
+    }
+
+    return (escapedText);
+}
+
+std::string IrcBot::translateText(const std::string &rawText, const std::string &rawTargetLang)
+{
+    std::string text = escapeText(rawText);
+    std::string targetLang = escapeText(rawTargetLang);
+	std::stringstream command;
+    command << "python3 translate.py \"" << text << "\" " << targetLang << " > tmp_output.txt";
 	std::string result;
 
-	int rcode = system(command.c_str());
+	int rcode = std::system(command.str().c_str());
 	if (rcode != 0)
 		throw TranslationException();
 

@@ -32,7 +32,7 @@ int main(int ac, char **av)
         bot.joinChannel("#c2po");
         bot.run();
     } catch (const std::exception &e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << ERROR << e.what() << RESET << std::endl;
     }
 
     return (0);

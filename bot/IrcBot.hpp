@@ -47,7 +47,7 @@ private:
     std::vector<std::string>    splitMessage(const std::string &msg, char delimiter);
     void closeConnection();
 
-    std::string translateText(const std::string &text, const std::string &targetLang);
+    std::string translateText(const std::string &rawText, const std::string &rawTargetLang);
 public:
     IrcBot();
     IrcBot(const std::string &server, int port, const std::string &password);
