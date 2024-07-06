@@ -691,8 +691,8 @@ void Server::quit(std::string msg, int id)
 
     _nfds--;
     close(_fds[id + FIRST_CLIENT].fd);
-    if (id + FIRST_CLIENT != _nfds)
-        _fds[id + FIRST_CLIENT].fd = _fds[_nfds].fd;
+	for (int i = id + FIRST_CLIENT; i < _nfds; i++)
+        _fds[i].fd = _fds[i + 1].fd;
     _fds[_nfds].fd = 0;
     _fds[id + FIRST_CLIENT].revents = 0;
     
